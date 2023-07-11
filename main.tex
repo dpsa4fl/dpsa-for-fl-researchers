@@ -21,7 +21,26 @@ Short introduction to subject of the paper \ldots
 \end{abstract}
 
 \section{Introduction}
-% Make it possible for all to write documents with \LaTeX{}!
+Data privacy is one of the factors motivating federated learning. A machine learning model can be trained locally on computers owned by data owners (clients), who exchange only intermediate training results (gradients), instead of the data itself, with a central server that aggregates them into a shared model~\cite{McMahan2016CommunicationEfficientLO}. While this relieves the need to collect possibly sensitive data in a central location to perform the training process, the shared model and the gradients themselves contain enough information to enable reconstruction of private information~\cite{7958568}\cite{Boenisch2021WhenTC}.
+
+A solution to this problem is using a modified training algorithm that provides \emph{differential privacy} for the model~\cite{Abadi_2016}. The technique adds a small amount of noise to the result of each training step, calibrated in a way that makes high certainty statements about the presence of an individual point in the training dataset unlikely to be inferrable from the model.
+
+In this document, we present an architecture that allows using federated gradient descent while providing differential privacy for the training result as well as all intermediate gradients.
+
+Adding noise locally will require a large amount of noise and hence large utility loss to achieve privacy, so our protocol adds noise after aggregating intermediate results (\emph{global} differential privacy). To avoid revealing the non-noised aggregate to even the party adding the noise, we use the Prio protocol for \emph{secure aggregation}~\cite{prio}.
+
+\paragraph{Threat model and privacy guarantees.}
+Our system requires two non-colluding aggregation servers that can be curious but are honestly executing the protocol. All other participants, namely the clients and a server coordinating federated model updates, can be malicious. In this setting, we can guarantee anonymity (no adversary can tell which client submitted which data value) and privacy (no adversary learns anything about any honest clients' data values except the differentially private aggregate) as well as differential privacy for all information exchanged between participants as well as the final training result.
+
+In addition, the system is robust towards data poisoning attacks by limiting the influence a single client can have on the aggregation result.
+
+\paragraph{Related work.}
+There is a variety of work on federated learning with secure aggregation and global differential privacy. Systems that provide both differ from ours by the assumed threat model:
+\begin{itemize}
+\item\cite{dprio} only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
+\item\cite{Stevens2021EfficientDP} server may be malicious, but requires honest majority of clients
+\item\cite{Kairouz2021TheDD} server may be malicious, but all clients need to be honest (which is realistic when having access to trusted execution environments)
+\end{itemize}
 
 \section{Variants of privacy}
 
@@ -42,12 +61,8 @@ Short introduction to subject of the paper \ldots
 
 \section{Utility analysis}
 
-
-
-\begin{thebibliography}{9}
-\bibitem[Doe]{doe} \emph{First and last \LaTeX{} example.},
-John Doe 50 B.C.
-\end{thebibliography}
+\bibliographystyle{plain}
+\bibliography{refs}
 
 \end{document}
 
