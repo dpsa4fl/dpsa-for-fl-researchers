@@ -1,5 +1,10 @@
 \documentclass{article}
-\title{Secure Aggregation with Global Differential Privacy for Federated Machine Learning}
+
+\usepackage{algorithm}
+\usepackage{amsfonts}
+\usepackage{algpseudocode}
+
+\title{Secure Aggregation with Global Differential Privacy for Federated Machine Learning with Malicious Clients}
 \author{Olivia Roehrig  \\
 	Your Company / University  \\
 	\and
@@ -37,12 +42,11 @@ In addition, the system is robust towards data poisoning attacks by limiting the
 \paragraph{Related work.}
 There is a variety of work on federated learning with secure aggregation and global differential privacy. Systems that provide both differ from ours by the assumed threat model:
 \begin{itemize}
-\item\cite{dprio} only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
-\item\cite{Stevens2021EfficientDP} server may be malicious, but requires honest majority of clients
-\item\cite{Kairouz2021TheDD} server may be malicious, but all clients need to be honest (which is realistic when having access to trusted execution environments)
-\end{itemize}
-
-\section{Variants of privacy}
+\item\cite{dprio} no input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
+\item\cite{Stevens2021EfficientDP} no input validation, server may be malicious, but requires honest majority of clients
+\item\cite{Kairouz2021TheDD} no input validation, server may be malicious, but all clients need to be honest (which is realistic when having access to trusted execution environments)
+\item\cite{acorn} can do input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
+\end{itemize} \section{Variants of privacy}
 
 \paragraph{Explanations}
 
@@ -56,6 +60,45 @@ There is a variety of work on federated learning with secure aggregation and glo
 
 \paragraph{the pseudo code}
 
+\begin{algorithm}
+  \caption{Client procedure}\label{client}
+
+  \begin{algorithmic}[1]
+  \State\textbf{Input:} Training dataset $X$, loss function $\mathcal L(\theta; x)$, number of rounds $N$, fixed point encoding bit length $b$
+  \State\textbf{Output:} Model $\theta$ trained on dataset $X$ for $N$ rounds
+
+  \For{$N$}
+  \State$\theta$ = retrieve current shared model from the ML server server
+  \State\textbf{G} = $\frac{1}{|X|} \sum_{x\in X} \nabla\mathcal L(\theta; x)$ (model gradient average)
+  \State\textbf{G} = $\textbf{G}/\mathbf{max}\{1,||\textbf{G}||_{L_2}\}$ (clip $G$ to $L_2$ norm 1)
+  \State\textbf{G} = round entries towards $0$ to get $b$-bit fixed point number in $(-1, 1)$
+  \State\textbf{G} = apply $p(x) = 2^{b-1}\cdot x + 2^{b-1}$ to all entries to get an integer vector
+  \State send one secret share of \textbf{G} to each of the aggregation servers
+  \EndFor
+  \State$\theta$ = retrieve current shared model from the ML server
+  \State\Return $\theta$
+  \end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+  \caption{Aggregator server procedure}\label{server}
+  \begin{algorithmic}[1]
+  \State \textbf{Input:} Set of clients $C$, privacy parameter $\rho$, fixed point encoding bit length $b$, finite field $F$ with order $p /geq 2^b$
+  \State \textbf{Output:} Aggregate gradient, noised to be $\rho$-zero concentrated differentially private
+
+  \State \textbf{G} = 0
+  \For{all clients $\textbf{c} \in C$}
+       \State \textbf{g} = retrieve gradient share from \textbf{c}
+	   \State verify \textbf{g} is a share of a fixed point vector with $L_2$ norm $\leq 1$ projected to the field
+	   \State \textbf{G} = \textbf{G} + \textbf{g}
+  \EndFor
+  \State \textbf{G} = \textbf{G} + $n$ where $n$ is drawn from the discrete Gaussian distribution $\mathcal N_\mathbb{Z}(0,\frac{2^n}{\sqrt{2\rho}})$
+  \State \textbf{G} = $\textbf{G}\textnormal{ mod } p$ and map to field $F$
+  \State retrieve aggregate share from other aggregation server and decrypt
+  \State apply $pp(y) = 2^{1-b} \cdot y - |C|$ componentwise to obtain a float vector
+  \end{algorithmic}
+\end{algorithm}
 \section{Privacy analysis}
 
 
