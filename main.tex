@@ -3,6 +3,9 @@
 \usepackage{algorithm}
 \usepackage{amsfonts}
 \usepackage{algpseudocode}
+\usepackage{graphicx}
+\usepackage{enumitem}
+
 
 \title{Secure Aggregation with Global Differential Privacy for Federated Machine Learning with Malicious Clients}
 \author{Olivia Roehrig  \\
@@ -46,19 +49,114 @@ There is a variety of work on federated learning with secure aggregation and glo
 \item\cite{Stevens2021EfficientDP} no input validation, server may be malicious, but requires honest majority of clients
 \item\cite{Kairouz2021TheDD} no input validation, server may be malicious, but all clients need to be honest (which is realistic when having access to trusted execution environments)
 \item\cite{acorn} can do input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
-\end{itemize} \section{Variants of privacy}
+\end{itemize}
 
-\paragraph{Explanations}
+\section{The \texttt{dpsa4fl} system}
+The \texttt{dpsa4fl} library enables the use of the \textit{Distributed Aggregation Protocol} (DAP) for
+aggregation of gradient vectors in the context of federated machine learning. It
+is currently specialized to work with the janus implementation of DAP,
+and the flower machine learning framework.
+In practice this means that our library \texttt{dpsa4flwr} allows users of flower
+to replace the native aggregation process with our alternative aggregation flow
+going through a separate janus instance.
 
-\paragraph{Secure aggregation}
+\paragraph{Architecture.}
+A distributed FL system using \texttt{dpsa4fl} (figure \ref{fig:architecture}) can thus be
+subdivided into two parts: the original participants of a given federated
+learning scheme (comprised of a server and multiple clients), and two
+janus aggregation servers executing the DAP. To differentiate the FL server from
+the aggregation servers we call it the \textit{controller}.
 
-\paragraph{differential privacy}
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\columnwidth]{assets/dpsa-overview-2-edit_no_explanations-2023-08-22.drawio.pdf}
+  \caption{Test}
+  \label{fig:architecture}
+\end{figure}
 
-\section{Our system}
+The FL framework, i.e., flower, remains responsible for all functions of an FL
+scheme, except for gradient aggregation. This includes broadcasting of the
+current model, selecting clients for training, and applying the aggregated
+gradients to the model.
 
-\paragraph{building blocks}
+The janus servers are responsible for making the aggregation of clients'
+gradients secure and private. These aggregation servers do not need to be
+managed by the same organization that is running the FL scheme, since they
+merely provide a generic aggregation mechanism. They are intended to be long
+running services which are responsible for processing aggregation jobs for
+various applications concurrently. In fact, the threat model assumes that at
+least one aggregation server is run by a separate organization, see section ?.
 
-\paragraph{the pseudo code}
+\paragraph{Intended setup.}
+
+This means that an FL-org can delegate the additionally required infrastructure
+to a ``DAP as a service''-provider, and thus get good privacy guarantees for
+their users without too much organizational overhead.
+
+\paragraph{Execution}
+
+We describe how a single round of an FL-scheme is executed:
+\begin{enumerate}[itemsep=0mm]
+\item The controller selects available clients for this round and broadcasts its model to them.
+\item The clients train their copy of the model on their local training data and
+  compute the overall gradient vector.
+\item They encode and split the gradient vector according to the prio protocol
+  and submit each part to an aggregation server.
+\item The aggregation servers aggregate reports from all clients, verify them,
+  add noise for differential privacy and compute the sum of all gradient vectors.
+\item The controller gets this gradient vector, applies it to its model, and
+  begins the next round.
+\end{enumerate}
+It is important to note that each aggregation server receives only a ``share''
+of every clients' gradient vector. It is impossible to reconstruct the original
+vector from this share alone. All processing on the aggregation server, i.e.,
+the verification, aggregation and noising happens in terms of its shares.
+Only the subsequent combination of the resuls from both aggregation servers gives
+us a plaintext value: the sum of all gradient vectors, together with noise. From
+this value too it is sufficiently improbable to conclude properties of
+individual clients' submissions. See section \ref{} for a more detailed analysis.
+
+\section{Threat model}
+The controller and the clients have different goals, and thus the threat model
+has to be considered seperately for them. The parties running the aggregation
+servers should be impartial to the learning process, but of course might deviate
+from that behaviour. We consider the perspectives of the clients
+and of the controller below.
+
+\paragraph{Clients.} The clients are interested in participating in an FL-scheme
+without their private information becoming known by other parties. There are two
+ways this might happen:
+\begin{enumerate}[itemsep=0]
+\item The submitted gradient vector of a client (for a given training round) might
+  become known to other parties. This would allow them to infer properties of
+  the local training set.
+\item Access to the trained model makes it possible to make inferences about the
+  combined training set. Combination with other publicly available data can lead to
+  leakage of individual clients' data.
+\end{enumerate}
+Our system guarantees the following: As long as at least one aggregation server
+follows the protocol (i.e., is honest-but-curious), the client's data remains
+private. Attack (1) is mitigated by the secure aggregation mechanism of DAP.
+As long as the aggregation servers don't collude, they don't have access to
+individual gradients. Attack (2) is mitigated by the fact that the sum of
+gradient vectors is never revealed by itself, but only together with the noise added by
+both aggregation servers. As long as at least one aggregation server adds
+correctly configured noise, this makes the revealed value differentially
+private. Differential privacy mitigates inference attacks (source).
+
+In practice this means: clients can be sure that their data is safe as long as
+they trust one of the aggregation servers to be honest in their execution of the
+protocol. No trust in the controller is required.
+
+\paragraph{Controller.}
+
+
+\section{Implementation}
+
+
+
+
+\paragraph{Algorithm}
 
 \begin{algorithm}
   \caption{Client procedure}\label{client}
