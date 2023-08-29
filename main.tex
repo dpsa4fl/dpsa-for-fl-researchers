@@ -2,10 +2,14 @@
 
 \usepackage{algorithm}
 \usepackage{amsfonts}
+\usepackage{amsmath}
 \usepackage{algpseudocode}
 \usepackage{graphicx}
 \usepackage{enumitem}
 
+\algrenewcommand\algorithmicrequire{\textbf{Input:}}
+\algrenewcommand\algorithmicensure{\textbf{Output:}}
+\usepackage{xcolor}
 
 \title{Secure Aggregation with Global Differential Privacy for Federated Machine Learning with Malicious Clients}
 \author{Olivia Roehrig  \\
@@ -38,9 +42,9 @@ In this document, we present an architecture that allows using federated gradien
 Adding noise locally will require a large amount of noise and hence large utility loss to achieve privacy, so our protocol adds noise after aggregating intermediate results (\emph{global} differential privacy). To avoid revealing the non-noised aggregate to even the party adding the noise, we use the Prio protocol for \emph{secure aggregation}~\cite{prio}.
 
 \paragraph{Threat model and privacy guarantees.}
-Our system requires two non-colluding aggregation servers that can be curious but are honestly executing the protocol. All other participants, namely the clients and a server coordinating federated model updates, can be malicious. In this setting, we can guarantee anonymity (no adversary can tell which client submitted which data value) and privacy (no adversary learns anything about any honest clients' data values except the differentially private aggregate) as well as differential privacy for all information exchanged between participants as well as the final training result.
+Our system requires two aggregation servers, that can be curious but one of which must follow protocol. do not collude with each other or clients. All other participants, namely the clients and a server coordinating federated model updates, can be malicious. We assume that a client interested in their own data's differential privacy executes the protocol correctly. In this setting, we can guarantee anonymity (no adversary can tell which client submitted which data value) and privacy (no adversary learns anything about any honest clients' data values except the differentially private aggregate) as well as differential privacy for all information exchanged about an honest client between all participants as well as the final training result.
 
-In addition, the system is robust towards data poisoning attacks by limiting the influence a single client can have on the aggregation result.
+If we can assure both aggregation servers to honestly follow protocol, even while curious, our system is robust towards data poisoning attacks by ensuring differential privacy even for malicious clients and hence limiting the influence any single client can have on the aggregation result.
 
 \paragraph{Related work.}
 There is a variety of work on federated learning with secure aggregation and global differential privacy. Systems that provide both differ from ours by the assumed threat model:
@@ -114,7 +118,7 @@ the verification, aggregation and noising happens in terms of its shares.
 Only the subsequent combination of the resuls from both aggregation servers gives
 us a plaintext value: the sum of all gradient vectors, together with noise. From
 this value too it is sufficiently improbable to conclude properties of
-individual clients' submissions. See section \ref{} for a more detailed analysis.
+individual clients' submissions. See section  for a more detailed analysis.
 
 \section{Threat model}
 The controller and the clients have different goals, and thus the threat model
@@ -126,7 +130,7 @@ and of the controller below.
 \paragraph{Clients.} The clients are interested in participating in an FL-scheme
 without their private information becoming known by other parties. There are two
 ways this might happen:
-\begin{enumerate}[itemsep=0]
+\begin{enumerate}
 \item The submitted gradient vector of a client (for a given training round) might
   become known to other parties. This would allow them to infer properties of
   the local training set.
@@ -153,25 +157,25 @@ protocol. No trust in the controller is required.
 
 \section{Implementation}
 
-
-
-
-\paragraph{Algorithm}
-
-\begin{algorithm}
-  \caption{Client procedure}\label{client}
+\begin{algorithm}[h]
+  \caption{Client procedure}\label{alg:client}
 
   \begin{algorithmic}[1]
-  \State\textbf{Input:} Training dataset $X$, loss function $\mathcal L(\theta; x)$, number of rounds $N$, fixed point encoding bit length $b$
-  \State\textbf{Output:} Model $\theta$ trained on dataset $X$ for $N$ rounds
+  \Require Training dataset $X$, loss function $\mathcal L(\theta; x)$, number of rounds $N$, fixed-point encoding bit length $b$, set of aggregator server adresses $\texttt{S}$
+  \Ensure Model $\theta$ trained on dataset $X$ for $N$ rounds
 
-  \For{$N$}
-  \State$\theta$ = retrieve current shared model from the ML server server
-  \State\textbf{G} = $\frac{1}{|X|} \sum_{x\in X} \nabla\mathcal L(\theta; x)$ (model gradient average)
-  \State\textbf{G} = $\textbf{G}/\mathbf{max}\{1,||\textbf{G}||_{L_2}\}$ (clip $G$ to $L_2$ norm 1)
-  \State\textbf{G} = round entries towards $0$ to get $b$-bit fixed point number in $(-1, 1)$
-  \State\textbf{G} = apply $p(x) = 2^{b-1}\cdot x + 2^{b-1}$ to all entries to get an integer vector
-  \State send one secret share of \textbf{G} to each of the aggregation servers
+  \State $\textbf{round}_{(b,0)}(x) = \textbf{sign}(x) \cdot \textbf{floor}_b(\|x\|)$ \Comment{round to $b$ digits towards zero}
+  \State $\pi(x) = 2^{b-1}\cdot (x + 1)$ \Comment{project fixed-point $x\in(-1,1)$ to an integer $\leq 2^b$}
+
+  \For{$N$}\label{lst:line:loop}
+  \State$\theta$ = retrieve current shared model from the ML server\label{lst:line:retrieve}
+  \State$\textbf{g}_{avg}$ = $\frac{1}{|X|} \sum_{x\in X} \nabla\mathcal L(\theta; x)$ \Comment{compute model gradient average}
+\label{lst:line:grad}
+  \State$\textbf{g}_{clip}$ = $\textbf{g}_{avg}/\mathbf{max}\{1,||\textbf{g}_{avg}||_{L_2}\}$ \Comment{clip $\textbf{g}_{avg}$ to $L_2$ norm 1}\label{lst:line:clip}
+  \State$\textbf{g}_{fixed}$ = \Call{\textbf{map}}{$\textbf{round}_{(b,0)}$,$\textbf{g}_{clip}$} \Comment{round to get $b$-bit fixed-point vector}
+  \State$\textbf{g}_{int}$ = \Call{\textbf{map}}{$\pi$,$\textbf{g}_{fixed}$} \Comment{project to integer vector}
+\label{lst:line:project}
+  \State send one secret share of $\textbf{g}_{int}$ to each of the aggregation servers in \texttt S
   \EndFor
   \State$\theta$ = retrieve current shared model from the ML server
   \State\Return $\theta$
@@ -179,27 +183,61 @@ protocol. No trust in the controller is required.
 \end{algorithm}
 
 
-\begin{algorithm}
-  \caption{Aggregator server procedure}\label{server}
+\begin{algorithm}[h]
+  \caption{Aggregator server procedure}\label{alg:server}
   \begin{algorithmic}[1]
-  \State \textbf{Input:} Set of clients $C$, privacy parameter $\rho$, fixed point encoding bit length $b$, finite field $F$ with order $p /geq 2^b$
-  \State \textbf{Output:} Aggregate gradient, noised to be $\rho$-zero concentrated differentially private
+  \Require Set of client adresses $\texttt{C}$, set of aggregator server adresses $\texttt{S}$, privacy parameter $\rho$, fixed-point encoding bit length $b$
+  \Ensure Aggregate gradient, noised to be $\rho$-zero concentrated differentially private
 
-  \State \textbf{G} = 0
-  \For{all clients $\textbf{c} \in C$}
-       \State \textbf{g} = retrieve gradient share from \textbf{c}
-	   \State verify \textbf{g} is a share of a fixed point vector with $L_2$ norm $\leq 1$ projected to the field
-	   \State \textbf{G} = \textbf{G} + \textbf{g}
+  \State$\textbf{verify}_{\texttt{S}}(\textbf x)$ = perform prio protocol with the other aggregators in \texttt{S} to verify $\textbf x$ is a share of a fixed-point vector with $L_2$ norm $\leq 1$ projected to the integers $\{0,...,2^b\}$ using $\pi$
+  \State$\textbf{decrypt}_{\texttt{S}}(\textbf x)$ = perform prio protocol with the other aggregators in \texttt{S} to combine their aggregate shares with $\textbf x$ and obtain the aggregation result
+  \State$\textbf{noise}(x) = x+n$ where $n$ is drawn from a discrete Gaussian distribution $\mathcal N_\mathbb{Z}\left(0,\frac{2^b}{\sqrt{2\rho}}\right)$
+  \State$\pi'(y) = 2^{1-b} \cdot y - |\texttt{C}|$ \Comment{project integer $\leq 2^b\cdot|\texttt{C}|$ to float}
+  \State\textbf{G} = 0
+  \For{all clients $\texttt{c} \in \texttt{C}$}
+       \State{\textbf{g} = retrieve gradient share from \texttt{c}}
+	   \State$\textbf{verify}_\texttt{S}(\textbf{g})$ \label{lst:line:verify}
+	   \State\textbf{G} = \textbf{G} + \textbf{g}
   \EndFor
-  \State \textbf{G} = \textbf{G} + $n$ where $n$ is drawn from the discrete Gaussian distribution $\mathcal N_\mathbb{Z}(0,\frac{2^n}{\sqrt{2\rho}})$
-  \State \textbf{G} = $\textbf{G}\textnormal{ mod } p$ and map to field $F$
-  \State retrieve aggregate share from other aggregation server and decrypt
-  \State apply $pp(y) = 2^{1-b} \cdot y - |C|$ componentwise to obtain a float vector
+  \State$\textbf{G}_{noised} = \textbf{map}(\textbf{noise}, \textbf{G})$  \Comment{add noise componentwise} \label{lst:line:noise}
+  \State$\textbf{G}_{agg} = \textbf{decrypt}_{\texttt{S}}(\textbf{G}_{noised})$ \Comment{combine shares to aggregate}
+  \State$\textbf{GG}_{float} = \textbf{map}(\pi', \textbf{G}_{agg})$ \Comment{map to float vector}
+  \State send $\textbf{GG}_{float}$ to ML server
   \end{algorithmic}
 \end{algorithm}
+
 \section{Privacy analysis}
+We claim that executing Algorithms 1 and 2 with non-colluding aggregation servers, one of which honestly but curiously follows protocol, and an arbitrary number of potentially malicious clients, provides $(N \cdot \rho)$-zero concentrated differential privacy for any clients' dataset $X$. If both servers are honest, the protocol also protects against data poisoning attacks by malicious clients.
 
+\paragraph{Privacy}
+ The protocol describes a distributed implementation of the usual differentially private gradient descent \cite{Abadi_2016}, with the differences being the integer encoding of the gradient vector to enable secret sharing according to the prio protocol \cite{prio}, the aggregation happening on a different machine than the training itself, and the use of discrete Gaussian noise on the integer encoding of the gradient aggregate.
+We perform the privacy analysis from the point of view of one client executing one iteration of the loop starting at line~\ref{lst:line:loop} of Algorithm~\ref{alg:client} faithfully. We show that:
+\begin{enumerate}
+\item The function mapping the clients' dataset $X$ to the gradient whose shares are transferred to the aggregation servers is $2^b$-sensitive.
+\item No information about the gradient except its secret shares is revealed to any party prior to noising.
+\item The noise added on the aggregation server provides $\rho$-zero concentrated differential privacy for the aggregation result $\textbf{G}_{float}$.
+\end{enumerate}
+It follows that the execution of Algorithm~\ref{alg:client} provides $(N\cdot\rho)$-zero concentrated differential privacy by the composition property \cite[Lemma~1.8 on page 7]{DBLP:journals/corr/BunS16}.
 
+\begin{enumerate}
+\item We want to determine the sensitivity in the dataset $X$ of one iteration of the loop starting at line~\ref{lst:line:loop} of Algorithm~\ref{alg:client}. Assuming the current shared model $\theta$ retrieved in line~\ref{lst:line:retrieve} was computed in a way that provides differential privacy for $X$, its use will not affect the sensitvity. The clipping in line~\ref{lst:line:clip} ensures that 
+\[\|\textbf{g}_{fixed}\|_2 = \|\overline{\textbf{round}}_{(b,0)}(\textbf{g}_{clip})\|_2\leq\|\textbf{g}_{clip}\|_2\leq 1.\]
+Denote by $\textbf{g}'$ the values of the variables in the algorithm obtained by replacing any one entry in $X$ by a different entry, and by $\overline\pi$ the component-wise application of the function $\pi$. We have
+\begin{align*}
+\|\textbf g_{int} - \textbf g_{int}'\|_2 &= \|\overline\pi(\textbf g_{fixed}) - \overline \pi(\textbf g_{fixed}')\|_2 \\
+&\leq 2^{b-1} \cdot \| \textbf g_{fixed}- \textbf g_{fixed}'\|_2\\
+&\leq 2^{b-1} \cdot (\| \textbf g_{fixed}\|_2 + \|\textbf g_{fixed}'\|_2)\\
+&\leq 2^b
+\end{align*}
+One iteration of the computation inside the loop (lines~\ref{lst:line:retrieve} to \ref{lst:line:project}) therefore is $2^b$-sensitive in $X$.
+
+\item Prio secret sharing amounts to the client splitting their secret into summands, and recovering the aggregated shares amounts to summing the sums of secret shares \cite[Scheme on page 3]{prio}. Doing so does not affect the sensitivity of $\textbf{g}_{int}$, as the result of the computation is equal to the result obtained by summing all clients' gradients without secret sharing. Share transfer happens over an encrypted channel \cite[Step 1 of Scheme on page 3]{prio}, combining the shares happens after adding noise on the server in line~\ref{lst:line:noise}. Therefore if at least one of the servers is honest and they don't collude, the only things visible to anyone evesdropping or participating are single secret shares of the gradient and the noised aggregate.
+
+\item Noise is added prior to combining the aggregate shares to avoid disclosing the non-noised aggregate to a server. Since combining them simply means computing their sum \cite[Step 3 of Scheme on page 3]{prio}, the value of $\textbf{G}_{agg}$ does not depend on whether the noise is added before or after combining the shares. We can hence view the function mapping one clients' data set $X$ to the non-noised gradient aggregate as a $2^b$-sensitive function over the integers, so adding noise drawn from $\mathcal N_\mathbb{Z}\left(0,\frac{2^b}{\sqrt{2\rho}}\right)$ will provide $\rho$-zero concentrated differential privacy due to~\cite[Theorem 14 on page 15]{DBLP:journals/corr/abs-2004-00010} (with all $\sigma_j=\frac{2^b}{\sqrt{2\rho}}$). Mapping the integer encoding of the aggregate back to a float vector and using it in further training will not affect privacy due to post-processing invariance. Note that each server adds the entire amount of noise required to obtain the guarantee, so if at least one of them is honest the guarantee holds. This comes at the cost of adding the entire noise on each server, resulting in worse utility.
+\end{enumerate}
+
+\paragraph{Robustness}
+In line~\ref{lst:line:verify} of Algorithm~\ref{alg:server}, the servers perform a secret-shared non-interactive proof protocol \cite[Section 4]{prio} together to verify that the client-side clipping was performed properly. This ensures the sensitivity is as described above, even for gradients submitted by malicious clients, and hence protects from clients attempting data poisoning, i.e. influencing the computation result in a way that benefits them. The verification part of the protocol requires all servers to act honestly, so our system offers this protection only under a weaker threat model. The above proof of privacy still holds for all clients that execute the protocol truthfully.
 \section{Utility analysis}
 
 \bibliographystyle{plain}
