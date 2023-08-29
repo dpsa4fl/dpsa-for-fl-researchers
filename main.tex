@@ -152,7 +152,26 @@ In practice this means: clients can be sure that their data is safe as long as
 they trust one of the aggregation servers to be honest in their execution of the
 protocol. No trust in the controller is required.
 
-\paragraph{Controller.}
+\paragraph{Controller.} The controller is interested in training an ML model on
+the data of the clients. Since it cannot inspect the individually submitted
+gradients, this introduces the possibility of data poisoning attacks: malicious
+clients can try to influence the learning process by submitting exaggerated
+gradient vectors.
+
+The DAP is designed to mitigate this sort of attack. Even though the aggregation
+servers do not have access to individual plaintext gradients, they have a
+protocol for verifying that each of the submitted reports is well-formed, i.e.,
+has an L2-norm less than $1$. This means that while clients still can submit
+``false'' data, they cannot gain unproportional leverage by doing so. Thus, data
+poisoning attacks by a minority of clients are mitigated. The DAP can only
+guarantee this as long as the aggregation servers do not collude with malicious
+clients, as in that case it would be easy to craft submissions to fool the other
+aggregation server into believing that reports are well-formed, even though they
+are not.
+
+In practice this means: the controller can be sure that it receives gradients
+based on real data, as long as it trusts \textit{both} aggregation servers to
+execute the protocol honestly, and a majority of clients is honest.
 
 
 \section{Implementation}
