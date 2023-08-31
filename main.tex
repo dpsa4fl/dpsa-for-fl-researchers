@@ -43,7 +43,7 @@ In this document, we present an architecture that allows using federated gradien
 Adding noise locally will require a large amount of noise and hence large utility loss to achieve privacy, so our protocol adds noise after aggregating intermediate results (\emph{global} differential privacy). To avoid revealing the non-noised aggregate to even the party adding the noise, we use the Prio protocol for \emph{secure aggregation}~\cite{prio}.
 
 \paragraph{Threat model and privacy guarantees.}
-Our system requires two aggregation servers, that can be curious but one of which must follow protocol. do not collude with each other or clients. All other participants, namely the clients and a server coordinating federated model updates, can be malicious. We assume that a client interested in their own data's differential privacy executes the protocol correctly. In this setting, we can guarantee anonymity (no adversary can tell which client submitted which data value) and privacy (no adversary learns anything about any honest clients' data values except the differentially private aggregate) as well as differential privacy for all information exchanged about an honest client between all participants as well as the final training result.
+Our system requires two aggregation servers that do not collude with each other or clients, one of which must honestly follow protocol. All other participants, namely the clients and a server coordinating federated model updates, can be malicious. We assume that a client interested in their own data's differential privacy executes the protocol correctly. In this setting, we can guarantee anonymity (no adversary can tell which client submitted which data value) and privacy (no adversary learns anything about any honest clients' data values except the differentially private aggregate) as well as differential privacy for all information exchanged about an honest client between all participants as well as the final training result.
 
 If we can assure both aggregation servers to honestly follow protocol, even while curious, our system is robust towards data poisoning attacks by ensuring differential privacy even for malicious clients and hence limiting the influence any single client can have on the aggregation result.
 
@@ -57,10 +57,12 @@ There is a variety of work on federated learning with secure aggregation and glo
 \end{itemize}
 
 \section{Building Blocks}
-\paragraph{Secure Aggregation}
+\subsection{Secure Aggregation}
+Secure Aggregation allows for the aggregation of secret distributed data in a way that only the aggregate is being published.
 
+We employ the \textit{prio protocol}~\cite{prio} to compute the sum of client gradients without the need to disclose individual gradients to anyone. Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page 3]{prio}, where each client splits their gradient into a sum of random vectors and sends one summand to each server over an encrypted channel. Each server sums the shares it recieved and publishes the resulting \textit{aggregate share}, which gets summed with the other servers' aggregate shares to obtain the aggregation result. If at least one of the servers is honest-but-curious, no party gains knowledge of all secret shares (and hence the plaintext value) of any clients' gradient.
 
-\paragraph{Differential Privacy}
+\subsection{Differential Privacy}
 Differential privacy is a method of enabling the publication of information derived from a dataset while making it unlikely that information about individual entries of the dataset can be inferred. There are many flavours of differential privacy, most of which can be converted into one another. A good introduction for programmers can be found here~\cite{near_abuah_2021}.
 
 We define the variant we will be using throughout the paper, following~\cite{DBLP:journals/corr/BunS16}.
@@ -78,7 +80,18 @@ of the function, where the maximum is taken over all datasets $X,X'$ differing i
 $$M(X) = f(X) + n \textnormal{ where } n \sim \mathcal N_\mathbb{Z}\left(0,\frac{(\Delta f)^2}{2\rho}\right)$$
 is $\rho$-zero-concentrated differentially private~\cite[Proposition 1.6]{DBLP:journals/corr/abs-2004-00010}.
 
-\paragraph{Federated Learning}
+\paragraph{Local vs. global differential privacy} In a distributed setting, it is relevant to consider at what point in the protocol the noise gets added.
+
+Adding noise client-side (\textit{local} differential privacy) does not require entrusting a central party with the non-noised information and the correct execution of the noising. However, each client needs to add the amount of noise required for their privacy guarantee, while it would be sufficient to add that amount once to the sum of all gradients after aggregation.
+
+Adding noise server-side (\textit{global} differential privacy) requires trust in the noising party. We perform noising on the aggregation servers prior to recombining the aggregate shares, so even the servers never see the non-noised aggregate gradient. We are still adding more noise than necessary in order to distribute the trust: each server adds the full amount of noise necessary for all clients' guarantees, allowing for all but one aggregator to maliciously deviate from protocol without compromising differential privacy.
+
+\subsection{Malicious clients}
+Differential privacy not only protects from inference attacks, but also limits the influence a single gradients' value can have on the training result. This is a viable defense against \textit{data poisoning attacks} by malicious clients attempting to sabotage or sway training results in their favour.
+
+The presence of malicious clients requires the server to have a way of validating the sensitivity of the aggregation, which in our case consists of checking if the norm of the gradient whose share the server recieved is bounded. The prio protocol provides \textit{secret-shared non-interactive proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this property without disclosing any clients' submissions. Correct validation requires all servers to follow the validation protocol honestly, but does not disclose any information about honest clients even if all but one server deviate.
+
+\subsection{Federated Learning}
 
 \section{The \texttt{dpsa4fl} system}
 The \texttt{dpsa4fl} library enables the use of the \textit{Distributed Aggregation Protocol} (DAP) for
