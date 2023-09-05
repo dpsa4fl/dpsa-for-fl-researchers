@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage{hyperref}
 \usepackage{algorithm}
 \usepackage{amsfonts}
 \usepackage{amsmath}
@@ -103,7 +104,11 @@ In practice this means that our library \texttt{dpsa4flwr} allows users of flowe
 to replace the native aggregation process with our alternative aggregation flow
 going through a separate janus instance.
 
-\subsection{Architecture.}
+\subsection{Building blocks}
+We use the implementation of prio as DAP in janus. And flower as a federated
+machine learning framework.
+
+\subsection{Architecture}
 A distributed FL system using \texttt{dpsa4fl} (figure \ref{fig:architecture}) can thus be
 subdivided into two parts: the original participants of a given federated
 learning scheme (comprised of a server and multiple clients), and two
@@ -129,35 +134,6 @@ merely provide a generic aggregation mechanism. They are intended to be long
 running services which are responsible for processing aggregation jobs for
 various applications concurrently. In fact, the threat model assumes that at
 least one aggregation server is run by a separate organization, see section ?.
-
-\subsection{Intended setup.}
-
-This means that an FL-org can delegate the additionally required infrastructure
-to a ``DAP as a service''-provider, and thus get good privacy guarantees for
-their users without too much organizational overhead.
-
-\subsection{Execution}
-
-We describe how a single round of an FL-scheme is executed:
-\begin{enumerate}[itemsep=0mm]
-\item The controller selects available clients for this round and broadcasts its model to them.
-\item The clients train their copy of the model on their local training data and
-  compute the overall gradient vector.
-\item They encode and split the gradient vector according to the prio protocol
-  and submit each part to an aggregation server.
-\item The aggregation servers aggregate reports from all clients, verify them,
-  add noise for differential privacy and compute the sum of all gradient vectors.
-\item The controller gets this gradient vector, applies it to its model, and
-  begins the next round.
-\end{enumerate}
-It is important to note that each aggregation server receives only a ``share''
-of every clients' gradient vector. It is impossible to reconstruct the original
-vector from this share alone. All processing on the aggregation server, i.e.,
-the verification, aggregation and noising happens in terms of its shares.
-Only the subsequent combination of the resuls from both aggregation servers gives
-us a plaintext value: the sum of all gradient vectors, together with noise. From
-this value too it is sufficiently improbable to conclude properties of
-individual clients' submissions. See section  for a more detailed analysis.
 
 \subsection{Threat model}
 The controller and the clients have different goals, and thus the threat model
@@ -212,8 +188,38 @@ In practice this means: the controller can be sure that it receives gradients
 based on real data, as long as it trusts \textit{both} aggregation servers to
 execute the protocol honestly, and a majority of clients is honest.
 
+\subsection{Intended setup.}
 
-\section{Implementation}
+This means that an FL-org can delegate the additionally required infrastructure
+to a ``DAP as a service''-provider, and thus get good privacy guarantees for
+their users without too much organizational overhead.
+
+\subsection{Execution}
+
+We describe how a single round of an FL-scheme is executed:
+\begin{enumerate}[itemsep=0mm]
+\item The controller selects available clients for this round and broadcasts its model to them.
+\item The clients train their copy of the model on their local training data and
+  compute the overall gradient vector.
+\item They encode and split the gradient vector according to the prio protocol
+  and submit each part to an aggregation server.
+\item The aggregation servers aggregate reports from all clients, verify them,
+  add noise for differential privacy and compute the sum of all gradient vectors.
+\item The controller gets this gradient vector, applies it to its model, and
+  begins the next round.
+\end{enumerate}
+It is important to note that each aggregation server receives only a ``share''
+of every clients' gradient vector. It is impossible to reconstruct the original
+vector from this share alone. All processing on the aggregation server, i.e.,
+the verification, aggregation and noising happens in terms of its shares.
+Only the subsequent combination of the resuls from both aggregation servers gives
+us a plaintext value: the sum of all gradient vectors, together with noise. From
+this value too it is sufficiently improbable to conclude properties of
+individual clients' submissions. See section  for a more detailed analysis.
+
+
+
+\subsection{Implementation}
  The protocol describes a distributed implementation of the usual differentially private gradient descent \cite{Abadi_2016}, with the differences being the integer encoding of the gradient vector to enable secret sharing according to the prio protocol \cite{prio}, the aggregation happening on a different machine than the training itself, and the use of discrete Gaussian noise on the integer encoding of the gradient aggregate.
 \begin{algorithm}[h]
   \caption{Client procedure}\label{alg:client}
