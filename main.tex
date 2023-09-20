@@ -326,8 +326,13 @@ gradient entries as field elements. This results in a rather large blow-up of
 message size. Improvements to our encoding are incoming, and as such we don't
 desribe our encoding in detail. It should suffice to say that currently, a
 single 16-bit fixed point number is encoded by 16 128-bit field elements, which
-means that we have a rather unacceptable factor of 256 (since such a message is
-sent to both aggregators).
+means that our messages are at least 128 times the size of plaintext gradients.
+There are both trivial and more complex methods to improve on this: the field
+size of 128-bit can be reduced to 64-bit while still supporting gradients with
+up to $2^{34} \approx 17 \cdot 10^9$ entries. Furthermore, the encoding can be
+compactified, such as not to require a seperate field element for each
+transmitted bit. Since this will increase the size of the correctness proof,
+a balance which optimizes message size has to be found.
 
 
 \begin{tikzpicture}
