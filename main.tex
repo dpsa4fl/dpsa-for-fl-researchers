@@ -84,6 +84,9 @@ Differential privacy not only protects from inference attacks, but also limits t
 The presence of malicious clients requires the server to have a way of validating the sensitivity of the aggregation, which in our case consists of checking if the norm of the gradient whose share the server recieved is bounded. The prio protocol provides \textit{secret-shared non-interactive proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this property without disclosing any clients' submissions. Correct validation requires all servers to follow the validation protocol honestly, but does not disclose any information about honest clients even if all but one server deviate.
 
 \subsection{Federated Learning}
+Federated learning (\textit{FL}) is a machine learning technique aiming to avoid centralized data collection by a single party performing the training. Instead, data owners (\textit{clients}) obtain a copy of the global model and train it on their private data locally. Model updates are then collected by a central party (\textit{FL server}) and aggregated into an update for the global model. The global model is distributed to the clients again anf the procedure is repeated until model performance is statisfactory.
+
+While removing the need for central data collection, the above scheme still requires clients to disclose the model updates they derived from their private data, which contains sensitive information in itself. Our protocol aims to enable secure aggregation with differential privacy for model update aggregation in order to keep each clients' model updates secret as well as protect their data from inference attacks performed on the aggregated global update or the model resulting from the procedure.
 
 \section{Related work.}
 There is a variety of work on federated learning with secure aggregation and global differential privacy. Systems that provide both differ from ours by the assumed threat model:
@@ -228,7 +231,7 @@ individual clients' submissions. See section  for a more detailed analysis.
   \Require Training dataset $X$, loss function $\mathcal L(\theta; x)$, number of rounds $N$, fixed-point encoding bit length $b$, set of aggregator server adresses $\texttt{S}$
   \Ensure Model $\theta$ trained on dataset $X$ for $N$ rounds
 
-  \State $\textbf{round}_{(b,0)}(x) = \textbf{sign}(x) \cdot \textbf{floor}_b(|x|)$ \Comment{round to $b$ digits towards zero}
+  \State $\textbf{round}_{(b,0)}(x) = \textbf{sign}(x) \cdot \textbf{floor}_b(|x|)$ \Comment{round to $b$ bits towards zero}
   \State $\pi(x) = 2^{b-1}\cdot (x + 1)$ \Comment{project fixed-point $x\in(-1,1)$ to an integer $\leq 2^b$}
 
   \For{$N$}\label{lst:line:loop}
@@ -305,6 +308,17 @@ In line~\ref{lst:line:verify} of Algorithm~\ref{alg:server}, the servers perform
 \section{Evaluation}
 \subsection{Communication complexity}
 \subsection{Utility analysis}
+We want to know how much noise our algorithm adds compared to the standard gradient descent with differential privacy obtained by sampling from the regular normal distribution~\cite{Abadi_2016}. There, each iteration of gradient aggregation adds noise drawn from $\mathcal N\left(0,\frac{(2C)^2}{2\rho}\right)$ for gradients clipped to norm $C$ ($C=1$, in our case) and our notion of $\rho$-zero-concentrated differential privacy.
+
+Consider rounding both gradient entries and noise to obtain $b$-bit fixed point numbers with one integer bit. Rounding a gradient introduces an error
+$$|\textbf{round}_{0,b)}(x) - x|\leq\frac{1}{2^{b-1}}$$
+to each of the clients' gradient entries in each aggregation step. This should be negligible given that the noise added to each aggregate entry is sampled from a normal distribution with standard deviation of $\sqrt{\frac{2}{\rho}}$, meaning that even for large values of $\rho$, say $\rho = 2^6$, and small values of $b$, say $b=16$, still $99.88\%$ of the noise samples will be an order of magnitude larger than that error.
+
+Next consider applying the projection $\pi$ to both gradients and noise before applying the noise, and reversing the projection afterwards. This does not alter the magnitude of the noise in the end result, and is equivalent to sampling instead from a scaled rounded Gaussian distribution $\mathcal N_{round}\left(0,\frac{2^{2b}}{2\rho}\right)$.
+
+Next consider using the discrete Gaussian instead. \cite[Corollary 17]{DBLP:journals/corr/abs-2004-00010} shows that utility is strictly better by a small amount.
+
+Last, consider that our protocol simply is a modification of the regular gradient descent algorithm with differential privacy as described in this section, but the aggreagtion and addition of noise is distributed among multiple servers $\texttt{S}$. As described in our threat model, in order to require trust in only one of those servers, each server has to add the entire amount of noise, so noise magnitude worsens by a multiple of $|\texttt{S}|$. The sum of discrete Gaussian variables is distributed closely Gaussian~\cite[Theorem 11]{Kairouz2021TheDD}, so utility of our algorithm with $\rho$-ZCdp is approximately that of the regular gradient descent with $|\texttt{S}|\cdot\rho$-ZCdp. If all aggregators are trustworthy, the protocol can be adapted so each only adds a fraction of the total noise to improve utility while maintaining the privacy bound.
 
 \section{Conclusion}
 
