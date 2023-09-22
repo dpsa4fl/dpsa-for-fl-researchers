@@ -15,12 +15,12 @@
 \algrenewcommand\algorithmicensure{\textbf{Output:}}
 \usepackage{xcolor}
 
-\title{Secure Aggregation with Global Differential Privacy for Federated Machine Learning with Malicious Clients}
+\title{\texttt{dpsa4fl}: Differential Privacy for Federated Machine Learning}
 \author{Olivia Roehrig  \\
 	Your Company / University  \\
 	\and
 	Maxim Urschumzew \\
-	His Company / University \\
+	\textit{Determi} \\
 	}
 
 \date{\today}
@@ -50,10 +50,12 @@ way to securely aggregate client data with two aggregation servers. As long as
 one server remains honest, the data remains private. The outstanding feature of
 prio is that the validity of the submitted data can be verified by the
 aggregators without them having access to the data itself, by using a form of
-zero-knowledge proofs.
+zero-knowledge proofs. Such proofs are verified using arithmetic circuits, and
+while prio provides a framework for implementing them, they have to be designed
+for each specific use-case individually.
 
 The original prio protocol has since been improved, and, under the name of Prio3, integrated into the
-general framework of \textit{verifiable distributed aggregation
+more general framework of \textit{verifiable distributed aggregation
   functions}~\cite{vdaf} (VDAFs). It is currently being implemented in the rust library
 \texttt{libprio-rs}~\cite{libprio-rs}, in tandem with ongoing specification effort~\cite{vdaf-draft}.
 VDAFs are meant to be executed using the \textit{distributed aggregation
@@ -65,10 +67,38 @@ as implemented in \texttt{libprio-rs} and \texttt{janus}. Nevertheless, for our
 explanations in the present paper
 we mostly refer to the more compact presentation of the original protocol in~\cite{prio}.
 
-\paragraph{Threat model and privacy guarantees.}
+\paragraph{Contributions.}
+Our goal is to implement a system for differential privacy for federated
+machine learning with prio. To this end, we contribute the following:
+\begin{itemize}
+\item We designed an arithmetic circuit for aggregation of gradient vectors with
+  bounded L2-norm with \texttt{libprio-rs}.
+\item We added functionality for global differential privacy in \texttt{janus}.
+\item We developed supporting infrastructure for integrating \texttt{janus} into
+  a federated learning pipeline.
+\item We built bindings to use our system from the \texttt{flower} federated
+  learning framework.
+\end{itemize}
+All code is available as open source, see the respective repositories for more
+documentation. In this paper we present the overall architecture as well as a
+privacy and utility analysis.
+
+
+\paragraph{Related work.}
+There is a variety of work on federated learning with secure aggregation and global differential privacy. Systems that provide both differ from ours by the assumed threat model:
+\begin{itemize}
+\item\cite{dprio} no input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
+\item\cite{Stevens2021EfficientDP} no input validation, server may be malicious, but requires honest majority of clients
+\item\cite{Kairouz2021TheDD} no input validation, server may be malicious, but all clients need to be honest (which is realistic when having access to trusted execution environments)
+\item\cite{acorn} can do input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
+\end{itemize}
+
+\paragraph{Privacy and correctness guarantees.}
 Our system requires two aggregation servers that do not collude with each other or clients, one of which must honestly follow protocol. All other participants, namely the clients and a server coordinating federated model updates, can be malicious. We assume that a client interested in their own data's differential privacy executes the protocol correctly. In this setting, we can guarantee anonymity (no adversary can tell which client submitted which data value) and privacy (no adversary learns anything about any honest clients' data values except the differentially private aggregate) as well as differential privacy for all information exchanged about an honest client between all participants as well as the final training result.
 
 If we can assure both aggregation servers to honestly follow protocol, even while curious, our system is robust towards data poisoning attacks by ensuring differential privacy even for malicious clients and hence limiting the influence any single client can have on the aggregation result.
+
+
 
 \section{Preliminaries}
 \subsection{Secure Aggregation}
@@ -109,15 +139,6 @@ The presence of malicious clients requires the server to have a way of validatin
 Federated learning (\textit{FL}) is a machine learning technique aiming to avoid centralized data collection by a single party performing the training. Instead, data owners (\textit{clients}) obtain a copy of the global model and train it on their private data locally. Model updates are then collected by a central party (\textit{FL server}) and aggregated into an update for the global model. The global model is distributed to the clients again anf the procedure is repeated until model performance is statisfactory.
 
 While removing the need for central data collection, the above scheme still requires clients to disclose the model updates they derived from their private data, which contains sensitive information in itself. Our protocol aims to enable secure aggregation with differential privacy for model update aggregation in order to keep each clients' model updates secret as well as protect their data from inference attacks performed on the aggregated global update or the model resulting from the procedure.
-
-\section{Related work.}
-There is a variety of work on federated learning with secure aggregation and global differential privacy. Systems that provide both differ from ours by the assumed threat model:
-\begin{itemize}
-\item\cite{dprio} no input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
-\item\cite{Stevens2021EfficientDP} no input validation, server may be malicious, but requires honest majority of clients
-\item\cite{Kairouz2021TheDD} no input validation, server may be malicious, but all clients need to be honest (which is realistic when having access to trusted execution environments)
-\item\cite{acorn} can do input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
-\end{itemize}
 
 
 \section{The \texttt{dpsa4fl} system}
