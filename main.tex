@@ -37,15 +37,16 @@ Short introduction to subject of the paper \ldots
 \end{abstract}
 
 \section{Introduction}
-Data privacy is one of the factors motivating federated learning. A machine learning model can be trained locally on computers owned by data owners (clients), who exchange only intermediate training results (gradients), instead of the data itself, with a central server that aggregates them into a shared model~\cite{McMahan2016CommunicationEfficientLO}. While this relieves the need to collect possibly sensitive data in a central location to perform the training process, the shared model and the gradients themselves contain enough information to enable reconstruction of private information~\cite{7958568}\cite{Boenisch2021WhenTC}.
+Data privacy is one of the factors motivating \emph{federated learning}. A machine learning model can be trained locally on computers owned by data owners (\emph{clients}), who exchange only intermediate training results (\emph{gradients}), instead of the data itself, with a central server that aggregates them into a shared model~\cite{McMahan2016CommunicationEfficientLO}. While this relieves the need to collect possibly sensitive data in a central location to perform the training, the shared model and the gradients themselves contain enough information to enable reconstruction of private information~\cite{7958568}\cite{Boenisch2021WhenTC}.
 
 A solution to this problem is using a modified training algorithm that provides \emph{differential privacy} for the model~\cite{Abadi_2016}. The technique adds a small amount of noise to the result of each training step, calibrated in a way that makes high certainty statements about the presence of an individual point in the training dataset unlikely to be inferrable from the model.
 
-We present \texttt{dpsa4fl}, a system which provides differential privacy for
-federated gradient descent. Our privacy guarantees cover the training result,
+Adding noise locally would require a large amount of noise and hence large utility loss to achieve privacy, so our protocol adds noise after aggregating intermediate results (\emph{global} differential privacy). To avoid revealing the individual gradients or the non-noised aggregate to even the party adding the noise, we use \emph{secure aggregation}, a technique for multiple participants to compute a function on their confidential data that reveals only the computation result without disclosing any onther information about the inputs to anyone.
+
+We present \texttt{dpsa4fl}, a system which provides global differential privacy with
+secure aggregation for federated gradient descent. Our privacy guarantees cover the training result,
 as well as all intermediate aggregation and computation steps.
 
-Adding noise locally would require a large amount of noise and hence large utility loss to achieve privacy, so our protocol adds noise after aggregating intermediate results (\emph{global} differential privacy). To avoid revealing the non-noised aggregate to even the party adding the noise, we use the Prio protocol for \emph{secure aggregation}~\cite{prio}.
 
 \paragraph{Prio.} The protocol has been designed by Corrigan-Gibbs and Boneh in~\cite{prio} as a
 way to securely aggregate client data with two aggregation servers. As long as
