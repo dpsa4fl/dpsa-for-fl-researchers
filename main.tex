@@ -168,11 +168,9 @@ procedure is repeated until model performance is statisfactory.
 While removing the need for central data collection, the above scheme still
 requires clients to disclose the model updates they derived from their private
 data, which contain enough information for reconstruction attacks such as
-detailed in~\cite{7958568,Boenisch2021WhenTC}.
-
-Various methods for nullifying these attack vectors have been proposed, in
-particular secure aggregation and differential privacy. See~\cite{fl-survey} for
-an extensive survey of existing approaches.
+detailed in~\cite{7958568,Boenisch2021WhenTC}. It seems that differential
+privacy, in particular combined with secure aggregation, is the best approach to
+preserve the clients' privacy. See~\cite{fl-survey} for an extensive survey.
 
 \subsection{Secure Aggregation}
 Secure aggregation allows for the aggregation of secret distributed data in a
