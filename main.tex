@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage[numbers]{natbib}
 \usepackage{hyperref}
 \usepackage{algorithm}
 \usepackage{amsfonts}
@@ -167,23 +168,18 @@ options for actually running real-world FL tasks seem to be few:
 
 
 
-% \textit{Rest.} There is a variety of work on federated learning with secure aggregation and global differential privacy. Systems that provide both differ from ours by the assumed threat model:
-% \begin{itemize}
-% \item\cite{dprio} no input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
-% \item\cite{Stevens2021EfficientDP} no input validation, server may be malicious, but requires honest majority of clients
-% \item\cite{Kairouz2021TheDD} no input validation, server may be malicious, but all clients need to be honest (which is realistic when having access to trusted execution environments)
-% \item\cite{acorn} can do input validation, only one out of at least two servers needs to be honest but curious, but allows only small fraction of dishonest clients
-% \end{itemize}
-
-
-
-
 \section{Preliminaries}
 
 \subsection{Federated Learning}
-Federated learning (\textit{FL}) is a machine learning technique aiming to avoid centralized data collection by a single party performing the training. Instead, data owners (\textit{clients}) obtain a copy of the global model and train it on their private data locally. Model updates are then collected by a central party (\textit{FL server}) and aggregated into an update for the global model. The global model is distributed to the clients again anf the procedure is repeated until model performance is statisfactory.
+Federated learning is a machine learning technique introduced
+by~\citet{FL}, aiming to avoid centralized data collection by a single
+party performing the training. Instead, data owners (clients) obtain a copy of
+the global model and train it on their private data locally. Model updates are
+then collected by a central party (FL~server) and aggregated into an update for
+the global model. The global model is distributed to the clients again and the
+procedure is repeated until model performance is statisfactory.
 
-While removing the need for central data collection, the above scheme still requires clients to disclose the model updates they derived from their private data, which contain sensitive information in itself. Our protocol aims to enable secure aggregation with differential privacy for model update aggregation in order to keep each clients' model updates secret as well as protect their data from inference attacks performed on the aggregated global update or the model resulting from the procedure.
+While removing the need for central data collection, the above scheme still requires clients to disclose the model updates they derived from their private data, which contain sensitive information in itself. 
 
 \subsection{Secure Aggregation}
 Secure Aggregation allows for the aggregation of secret distributed data in a way that only the aggregate is being published.
@@ -226,6 +222,9 @@ The presence of malicious clients requires the server to have a way of validatin
 We employ the \textit{prio protocol}~\cite{prio} to compute the sum of client gradients without the need to disclose individual gradients to anyone. Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page 3]{prio}, where each client splits their gradient into a sum of random vectors and sends one summand to each server over an encrypted channel. Each server sums the shares it recieved and publishes the resulting \textit{aggregate share}, which gets summed with the other servers' aggregate shares to obtain the aggregation result. If at least one of the servers is honest-but-curious, no party gains knowledge of all secret shares (and hence the plaintext value) of any clients' gradient.
 
 
+% \section{Our protocol (hoisted)}
+% \subsection{from DP}
+% Our protocol aims to enable secure aggregation with differential privacy for model update aggregation in order to keep each clients' model updates secret as well as protect their data from inference attacks performed on the aggregated global update or the model resulting from the procedure.
 
 
 \section{The \texttt{dpsa4fl} system}
@@ -523,8 +522,8 @@ a balance which optimizes message size has to be found.
 
 \section{Conclusion}
 
-\bibliographystyle{plain}
-\bibliography{refs}
+\bibliographystyle{plainnat}
+\bibliography{doc}
 
 \end{document}
 
