@@ -174,7 +174,20 @@ preserve the clients' privacy. See~\cite{fl-survey} for an extensive survey.
 
 \subsection{Secure Aggregation}
 Secure aggregation allows for the aggregation of secret distributed data in a
-way that only the aggregate is being published. 
+way that only the aggregate is being published. More concretely, let
+$x_1,\ldots,x_n$ stand for private values located at $n$ clients. The goal of SA
+is to compute a given function $f(x_1,\ldots,x_n)$, in a way such that every
+participant learns at most as much about the distribution of input values
+$x_1,\ldots,x_n$, as could be deduced mathematically from only knowing the result of
+$f$.
+
+Another topic related with SA is input validation. In some cases, it might be
+required that the data submitted by clients fulfills certain properties, such as
+for example to lie within certain numerical bounds. Since the aggregating servers
+do not see the submissions in plaintext, they cannot easily check whether this
+is the case. Solutions usually involve some sort of zero-knowledge proof
+protocols, where the aggregation servers or clients interact with each other in
+order to convince themselves of the validity of the data---without revealing it.
 
 
 \subsection{Differential Privacy}
