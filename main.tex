@@ -41,7 +41,7 @@ Data privacy is one of the factors motivating \emph{federated learning}. A machi
 
 A solution to this problem is using a modified training algorithm that provides \emph{differential privacy} for the model~\cite{Abadi_2016}. The technique adds a small amount of noise to the result of each training step, calibrated in a way that makes high certainty statements about the presence of an individual point in the training dataset unlikely to be inferrable from the model.
 
-Adding noise locally would require a large amount of noise and hence large utility loss to achieve privacy, so our protocol adds noise after aggregating intermediate results (\emph{global} differential privacy). To avoid revealing the individual gradients or the non-noised aggregate to even the party adding the noise, we use \emph{secure aggregation}, a technique for multiple participants to compute a function on their confidential data that reveals only the computation result without disclosing any onther information about the inputs to anyone.
+Adding noise locally would require a large amount of noise and hence large utility loss to achieve privacy, while globally adding noise after the training step would require some party to have access to the non-noised aggregate. Our protocol adds noise after aggregating intermediate results, but keeps the aggregate secret (\emph{server} differential privacy~\cite{dprio}). To this end, we employ \emph{secure aggregation}, a technique for multiple participants to compute a function on their confidential data that reveals only the computation result without disclosing any onther information about the inputs to anyone.
 
 We present \texttt{dpsa4fl}, a system which provides global differential privacy with
 secure aggregation for federated gradient descent. Our privacy guarantees cover the training result,
@@ -153,6 +153,12 @@ If we can assure both aggregation servers to honestly follow protocol, even whil
 
 
 \section{Preliminaries}
+
+\subsection{Federated Learning}
+Federated learning (\textit{FL}) is a machine learning technique aiming to avoid centralized data collection by a single party performing the training. Instead, data owners (\textit{clients}) obtain a copy of the global model and train it on their private data locally. Model updates are then collected by a central party (\textit{FL server}) and aggregated into an update for the global model. The global model is distributed to the clients again anf the procedure is repeated until model performance is statisfactory.
+
+While removing the need for central data collection, the above scheme still requires clients to disclose the model updates they derived from their private data, which contain sensitive information in itself. Our protocol aims to enable secure aggregation with differential privacy for model update aggregation in order to keep each clients' model updates secret as well as protect their data from inference attacks performed on the aggregated global update or the model resulting from the procedure.
+
 \subsection{Secure Aggregation}
 Secure Aggregation allows for the aggregation of secret distributed data in a way that only the aggregate is being published.
 
@@ -168,7 +174,7 @@ $$D_\alpha(M(X)\|M(X'))\leq \rho\cdot\alpha$$
 where $D_\alpha(M(X)\|M(X'))$ is the $\alpha$-Renyi divergence between the distributions of $M(X)$ and $M(X')$.
 \end{definition}
 
-The Renyi divergence is a way of measuring dissimilarity between distributions. Intuitively, the output distributions of a $\rho$-zero-concentrated differentially privace function given two input datasets that differ in one entry will be harder to tell apart the smaller $\rho$. This means that one is unlikely to be able to tell whether an individual entry was an element of the input dataset when observing only the outputs of $M$.
+The Renyi divergence is a way of measuring dissimilarity between distributions. Intuitively, the output distributions of a $\rho$-zero-concentrated differentially private function given two input datasets that differ in one entry will be harder to tell apart the smaller $\rho$. This means that one is unlikely to be able to tell whether an individual entry was an element of the input dataset when observing only the outputs of $M$.
 
 One way of achieving differential privacy for a deterministic function $f$ is by adding noise drawn from a specific distribution calibrated to the \textit{sensitivity} 
 $$\Delta f=\max\{\|f(X)-f(X')\|_2\}$$
@@ -180,18 +186,14 @@ is $\rho$-zero-concentrated differentially private~\cite[Proposition 1.6]{DBLP:j
 
 Adding noise client-side (\textit{local} differential privacy) does not require entrusting a central party with the non-noised information and the correct execution of the noising. However, each client needs to add the amount of noise required for their privacy guarantee, while it would be sufficient to add that amount once to the sum of all gradients after aggregation.
 
-Adding noise server-side (\textit{global} differential privacy) requires trust in the noising party. We perform noising on the aggregation servers prior to recombining the aggregate shares, so even the servers never see the non-noised aggregate gradient. We are still adding more noise than necessary in order to distribute the trust: each server adds the full amount of noise necessary for all clients' guarantees, allowing for all but one aggregator to maliciously deviate from protocol without compromising differential privacy.
+The usual relief for this is adding noise on a central server (\textit{global} differential privacy). This requires trust in the noising party, as they get access to the non-noised aggregate and need to do the noising faithfully.
+
+We perform noising on the aggregation servers prior to recombining the aggregate shares, so even the servers never see the non-noised aggregate gradient (this technique has been coined \emph{server} differential privacy~\cite{dprio}). We are still adding more noise than necessary in order to distribute the trust: each server adds the full amount of noise necessary for all clients' guarantees, allowing for all but one aggregator to maliciously deviate from protocol without compromising differential privacy.
 
 \subsection{Malicious clients}
 Differential privacy not only protects from inference attacks, but also limits the influence a single gradients' value can have on the training result. This is a viable defense against \textit{data poisoning attacks} by malicious clients attempting to sabotage or sway training results in their favour.
 
 The presence of malicious clients requires the server to have a way of validating the sensitivity of the aggregation, which in our case consists of checking if the norm of the gradient whose share the server recieved is bounded. The prio protocol provides \textit{secret-shared non-interactive proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this property without disclosing any clients' submissions. Correct validation requires all servers to follow the validation protocol honestly, but does not disclose any information about honest clients even if all but one server deviate.
-
-\subsection{Federated Learning}
-Federated learning (\textit{FL}) is a machine learning technique aiming to avoid centralized data collection by a single party performing the training. Instead, data owners (\textit{clients}) obtain a copy of the global model and train it on their private data locally. Model updates are then collected by a central party (\textit{FL server}) and aggregated into an update for the global model. The global model is distributed to the clients again anf the procedure is repeated until model performance is statisfactory.
-
-While removing the need for central data collection, the above scheme still requires clients to disclose the model updates they derived from their private data, which contains sensitive information in itself. Our protocol aims to enable secure aggregation with differential privacy for model update aggregation in order to keep each clients' model updates secret as well as protect their data from inference attacks performed on the aggregated global update or the model resulting from the procedure.
-
 
 \section{The \texttt{dpsa4fl} system}
 The \texttt{dpsa4fl} library enables the use of the \textit{Distributed Aggregation Protocol} (DAP) for
