@@ -2,6 +2,13 @@
 
 \usepackage[numbers]{natbib}
 \usepackage{hyperref}
+\usepackage{xcolor}
+\hypersetup{
+  colorlinks,
+  linkcolor={red!50!black},
+  citecolor={blue!50!black},
+  urlcolor={blue!80!black}
+}
 \usepackage{algorithm}
 \usepackage{amsfonts}
 \usepackage{amsmath}
@@ -17,7 +24,7 @@
 \usepackage{xcolor}
 
 \title{\texttt{dpsa4fl}: Differential Privacy \\ for \\ Federated Machine
-  Learning \\ with Prio3}
+  Learning \\ with Prio}
 \author{Olivia Roehrig  \\
 	Your Company / University  \\
 	\and
@@ -69,27 +76,6 @@ We present \texttt{dpsa4fl}, a system which provides Server-DP with
 secure aggregation for federated gradient descent. Our privacy guarantees cover the training result,
 as well as all intermediate aggregation and computation steps.
 
-
-\paragraph{Prio.} The protocol has been designed by Corrigan-Gibbs and Boneh in~\cite{prio} as a
-way to securely aggregate client data with two aggregation servers. As long as
-one server remains honest, the data remains private. The outstanding feature of
-prio is that the validity of the submitted data can be verified by the
-aggregators without them having access to the data itself (\textit{input
-  validation}). This is done using arithmetic circuits, which have to be
-designed for each specific use-case individually.
-
-The original prio protocol has since been improved, and, under the name of Prio3, integrated into the
-more general framework of \textit{verifiable distributed aggregation
-  functions}~\cite{vdaf} (VDAFs). It is currently being implemented in the rust library
-\texttt{libprio-rs}~\cite{libprio-rs}, in tandem with ongoing specification effort~\cite{vdaf-draft}.
-VDAFs are meant to be executed using the \textit{distributed aggregation
-  protocol}, currently being implemented in \texttt{janus}~\cite{janus}, with
-specification ongoing in~\cite{dap-draft}.
-
-For our federated learning system we use Prio3
-as implemented in \texttt{libprio-rs} and \texttt{janus}. Nevertheless, for our
-explanations in the present paper
-we mostly refer to the more compact presentation of the original protocol in~\cite{prio}.
 
 \paragraph{Contributions.}
 Our goal is to implement a system for differential privacy for federated
@@ -185,11 +171,12 @@ data, which contain enough information for reconstruction attacks such as
 detailed in~\cite{7958568,Boenisch2021WhenTC}.
 
 Various methods for nullifying these attack vectors have been proposed, in
-particular secure aggregation and differential privacy. See~\cite{fl-survey} by
-Kairouz et al.\ for an extensive survey of existing approaches.
+particular secure aggregation and differential privacy. See~\cite{fl-survey} for
+an extensive survey of existing approaches.
 
 \subsection{Secure Aggregation}
-Secure Aggregation allows for the aggregation of secret distributed data in a way that only the aggregate is being published.
+Secure aggregation allows for the aggregation of secret distributed data in a
+way that only the aggregate is being published. 
 
 
 \subsection{Differential Privacy}
@@ -223,15 +210,31 @@ Differential privacy not only protects from inference attacks, but also limits t
 
 The presence of malicious clients requires the server to have a way of validating the sensitivity of the aggregation, which in our case consists of checking if the norm of the gradient whose share the server recieved is bounded. The prio protocol provides \textit{secret-shared non-interactive proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this property without disclosing any clients' submissions. Correct validation requires all servers to follow the validation protocol honestly, but does not disclose any information about honest clients even if all but one server deviate.
 
-\section{Secure Aggregation with Prio}
 
-\subsection{Architecture}
+\section{Secure aggregation with Prio}
+The protocol has been designed by Corrigan-Gibbs and Boneh in~\cite{prio} as a
+way to securely aggregate client data with two aggregation servers. As long as
+one server remains honest, the data remains private. The outstanding feature of
+prio is that the validity of the submitted data can be verified by the
+aggregators without them having access to the data itself (\textit{input
+  validation}). This is done using arithmetic circuits, which have to be
+designed for each specific use-case individually.
+
+The original prio protocol has since been improved, and, under the name of Prio3, integrated into the
+more general framework of \textit{verifiable distributed aggregation
+  functions}~\cite{vdaf} (VDAFs). It is currently being implemented in the rust library
+\texttt{libprio-rs}~\cite{libprio-rs}, in tandem with ongoing specification effort~\cite{vdaf-draft}.
+VDAFs are meant to be executed using the \textit{distributed aggregation
+  protocol}, currently being implemented in \texttt{janus}~\cite{janus}, with
+specification ongoing in~\cite{dap-draft}.
+
+For our federated learning system we use Prio3
+as implemented in \texttt{libprio-rs} and \texttt{janus}. Nevertheless, for our
+explanations in the present paper
+we mostly refer to the more compact presentation of the original protocol in~\cite{prio}.
+
+\subsection{Prio architecture}
 We employ the \textit{prio protocol}~\cite{prio} to compute the sum of client gradients without the need to disclose individual gradients to anyone. Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page 3]{prio}, where each client splits their gradient into a sum of random vectors and sends one summand to each server over an encrypted channel. Each server sums the shares it recieved and publishes the resulting \textit{aggregate share}, which gets summed with the other servers' aggregate shares to obtain the aggregation result. If at least one of the servers is honest-but-curious, no party gains knowledge of all secret shares (and hence the plaintext value) of any clients' gradient.
-
-
-% \section{Our protocol (hoisted)}
-% \subsection{from DP}
-% Our protocol aims to enable secure aggregation with differential privacy for model update aggregation in order to keep each clients' model updates secret as well as protect their data from inference attacks performed on the aggregated global update or the model resulting from the procedure.
 
 
 \section{The \texttt{dpsa4fl} system}
