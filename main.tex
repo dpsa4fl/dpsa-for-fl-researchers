@@ -78,12 +78,16 @@ as well as all intermediate aggregation and computation steps.
 
 
 \paragraph{Contributions.}
-Our goal is to implement a system for differential privacy for federated
-machine learning with prio. To this end, we contribute the following:
+We implement \texttt{dpsa4fl} as a set of wrapping layers which make the prio
+protocol usable from federated learning pipelines. We use the implementation of
+prio from the \texttt{libprio-rs} and \texttt{janus} libraries. In order for
+them to be usable for machine learning, we have to add support for gradient
+vector types, in particular with a verified L2-norm bound. We use
+\texttt{flower} as our target federated learning framework. Concretely, we did the following:
 \begin{itemize}
   \setlength\itemsep{0em}
-\item We designed an arithmetic circuit for aggregation of gradient vectors with
-  bounded L2-norm with \texttt{libprio-rs}.
+\item We designed a ``prio type'' for aggregation of gradient vectors with
+  bounded L2-norm for \texttt{libprio-rs}.
 \item We added functionality for global differential privacy in
   \texttt{libprio-rs} and \texttt{janus}.
 \item We developed supporting infrastructure for integrating \texttt{janus} into
