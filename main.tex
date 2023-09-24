@@ -47,7 +47,7 @@ aggregates them into a shared model~\cite{McMahan2016CommunicationEfficientLO}.
 While this relieves the need to collect possibly sensitive data in a central
 location to perform the training, the shared model and the gradients themselves
 contain enough information to enable reconstruction of private
-information~\cite{7958568}\cite{Boenisch2021WhenTC}.
+information~\cite{7958568,Boenisch2021WhenTC}.
 
 A solution to this problem is using a modified training algorithm that provides
 \emph{differential privacy} (DP) for the model~\cite{Abadi_2016}. The technique adds
@@ -179,7 +179,14 @@ then collected by a central party (FL~server) and aggregated into an update for
 the global model. The global model is distributed to the clients again and the
 procedure is repeated until model performance is statisfactory.
 
-While removing the need for central data collection, the above scheme still requires clients to disclose the model updates they derived from their private data, which contain sensitive information in itself. 
+While removing the need for central data collection, the above scheme still
+requires clients to disclose the model updates they derived from their private
+data, which contain enough information for reconstruction attacks such as
+detailed in~\cite{7958568,Boenisch2021WhenTC}.
+
+Various methods for nullifying these attack vectors have been proposed, in
+particular secure aggregation and differential privacy. See~\cite{fl-survey} by
+Kairouz et al.\ for an extensive survey of existing approaches.
 
 \subsection{Secure Aggregation}
 Secure Aggregation allows for the aggregation of secret distributed data in a way that only the aggregate is being published.
