@@ -260,21 +260,16 @@ explanations in the present paper
 we mostly refer to the more compact presentation of the original protocol in~\cite{prio}.
 
 \subsection{Prio architecture}
- Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page
- 3]{prio}, where each client splits their gradient into a sum of random vectors
- and sends one summand to each server over an encrypted channel. Each server
- sums the shares it recieved and publishes the resulting \textit{aggregate
-   share}, which gets summed with the other servers' aggregate shares to obtain
- the aggregation result. If at least one of the servers is honest-but-curious,
- no party gains knowledge of all secret shares (and hence the plaintext value)
- of any clients' gradient.
+Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page
+3]{prio}, where each client splits their gradient into a sum of random vectors
+and sends one summand to each server over an encrypted channel. Each server
+sums the shares it recieved and publishes the resulting \textit{aggregate
+  share}, which gets summed with the other servers' aggregate shares to obtain
+the aggregation result. If at least one of the servers is honest-but-curious,
+no party gains knowledge of all secret shares (and hence the plaintext value)
+of any clients' gradient.
 
-
- {\color{blue}
-\subsection{Malicious clients}
-The presence of malicious clients requires the server to have a way of
-validating the sensitivity of the aggregation, which in our case consists of
-checking if the norm of the gradient whose share the server recieved is bounded.
+\subsection{Input validation}
 The prio protocol provides \textit{secret-shared non-interactive
   proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this
 property without disclosing any clients' submissions. Correct validation
@@ -282,6 +277,17 @@ requires all servers to follow the validation protocol honestly, but does not
 disclose any information about honest clients even if all but one server
 deviate.
 
+
+% NOTE: Excluded, since same content is to be found in 'Threat model & guarantees'
+%
+%  {\color{blue}
+% \subsection{Malicious clients}
+% The presence of malicious clients requires the server to have a way of
+% validating the sensitivity of the aggregation, which in our case consists of
+% checking if the norm of the gradient whose share the server recieved is bounded.
+% }
+
+{\color{blue}
 \subsection{Intended setup.}
 This means that an FL-org can delegate the additionally required infrastructure
 to a ``DAP as a service''-provider, and thus get good privacy guarantees for
@@ -408,12 +414,11 @@ gradients, this introduces the possibility of data poisoning attacks: malicious
 clients can try to influence the learning process by submitting exaggerated
 gradient vectors.
 
-The Prio is designed to mitigate this sort of attack. Even though the aggregation
-servers do not have access to individual plaintext gradients, they have a
-protocol for verifying that each of the submitted reports is well-formed, i.e.,
+The input validation capability of Prio mitigates this sort of attack.
+As part of the aggregation process, the aggregators verify that each submitted gradient vector
 has an L2-norm less than $1$. This means that while clients still can submit
 ``false'' data, they cannot gain unproportional leverage by doing so. Thus, data
-poisoning attacks by a minority of clients are mitigated. The Prio can only
+poisoning attacks by a minority of clients are mitigated. Prio can only
 guarantee this as long as the aggregation servers do not collude with malicious
 clients, as in that case it would be easy to craft submissions to fool the other
 aggregation server into believing that reports are well-formed, even though they
