@@ -41,7 +41,13 @@
 
 
 \begin{abstract}
-We present \texttt{dpsa4fl}, a framework for differentially private federated learning with secure aggregation using the prio protocol. It enables training a neural network in a decentralized setting with differential privacy for data owners without disclosing sensitive data to any protocol participant or requiring trust in a single server. Given an appropriate threat model, it also provides resistance to malicious clients attempting data poisoning attacks by leveraging distributed input validation.
+We present \texttt{dpsa4fl}, a framework for differentially private federated
+learning with secure aggregation using the prio protocol. It enables training a
+neural network in a decentralized setting with differential privacy for data
+owners without disclosing sensitive data to any protocol participant or
+requiring trust in a single server. Given an appropriate threat model, it also
+provides resistance to malicious clients attempting data poisoning attacks by
+leveraging distributed input validation.
 \end{abstract}
 
 \section{Introduction}
@@ -59,7 +65,7 @@ A solution to this problem is using a modified training algorithm that provides
 \emph{differential privacy} (DP) for the model~\cite{Abadi_2016}. The technique adds
 a small amount of noise to the result of each training step, calibrated in a way
 that makes high certainty statements about the presence of an individual point
-in the training dataset unlikely to be inferrable from the model.
+in the training dataset unlikely to be inferable from the model.
 
 Adding noise locally would require a large amount of noise and hence large
 utility loss to achieve privacy, while globally adding noise after the training
@@ -72,7 +78,6 @@ inputs to anyone. This can be leveraged to enable adding the noise after aggrega
 intermediate results, but keep the individual contributions and the non-noised
 aggregate secret (\emph{Server-DP}~\cite{dprio}).
 
-
 \paragraph{Contributions.}
 We present \texttt{dpsa4fl}, a system which provides Server-DP with
 secure aggregation for federated learning. Our privacy guarantees cover the training
@@ -83,14 +88,16 @@ We implement \texttt{dpsa4fl} as a set of wrapping layers which make prio usable
 from federated learning pipelines. In order for
 them to be usable for machine learning, we have to add support for gradient
 vector types, in particular with a verified L2-norm bound. We use
-\texttt{flower} as our target federated learning framework. Concretely, we did the following:
+\texttt{flower}~\cite{flower} as our target federated learning framework.
+Concretely, we did the following:
 \begin{itemize}
   \setlength\itemsep{0em}
 \item We designed a ``prio type'' for aggregation of gradient vectors with
   bounded L2-norm for \texttt{libprio-rs}~\cite{libprio-rs}, a rust implementation
   of the prio protocol.
 \item We added functionality for server differential privacy in
-  \texttt{libprio-rs} and \texttt{janus}~\cite{janus}.
+  \texttt{libprio-rs} and \texttt{janus}~\cite{janus}, which provides the
+  infrastructure for executing the Prio protocol.
 \item We developed supporting infrastructure for integrating \texttt{janus} into
   a federated learning pipeline.
 \item We built bindings to use our system from the \texttt{flower} federated
@@ -126,12 +133,12 @@ SecAgg~\cite{secagg} protocol by Bonawitz et al. They follow the explicit goal
 of providing differential privacy specifically for FL tasks. SecAgg is a protocol
 with a single-server architecture, which means that the threat model, and thus
 the trade-offs in protocol design, are quite different from the ones used in the present work.
-Aditionally, SecAg currently does not integrate input validation and hence does not protect
+Additionally, SecAg currently does not integrate input validation and hence does not protect
 against malicious clients.
 
 {\color{green}TODO: add missing references}
 Approaches to secure aggregation with input validation other than prio are based on
-\textit{ring learning with errors}, such as RoFL~\cite{} and ACORN~\cite{acorn}.
+\textit{ring learning with errors}, such as RoFL~\cite{rofl} and ACORN~\cite{acorn}.
 While in RoFL, the input validation results in an 48x increase in communication
 costs, ACORN is successful in reducing the overhead to 2--10x. Unfortunately,
 with these being single-server architectures as well, it is not immediately
@@ -156,7 +163,7 @@ options for actually running real-world FL tasks seem to be few:
   terms of a simulation of FL, but such simulation code is far from enough for
   real-world deployments.
 \item In a similar vein, the authors of e.g.~\cite{Kairouz2021TheDD} provide
-  source code which is based on Tensorflow-federated~\cite{}. Unfortunately this
+  source code which is based on TensorFlow Federated~\cite{tff}. Unfortunately this
   framework is currently only usable for simulations as well.
 \end{itemize}
 
@@ -171,7 +178,7 @@ party performing the training. Instead, clients obtain a copy of
 the global model and train it on their private data locally. Model updates are
 then collected by a central party (\emph{FL~server}) and aggregated into an update for
 the global model. The updated global model is distributed to the clients again and the
-procedure is repeated until model performance is statisfactory.
+procedure is repeated until model performance is satisfactory.
 
 While removing the need for central data collection, the above scheme still
 requires clients to disclose the model updates they derived from their private
@@ -182,7 +189,7 @@ preserve the clients' privacy in this setting. See~\cite{fl-survey} for an exten
 
 \subsection{Secure Aggregation and Input Validation}
 Secure aggregation allows for the aggregation of secret distributed data in a
-way that reveals only the aggregate resule. More concretely, let
+way that reveals only the aggregate result. More concretely, let
 $x_1,\ldots,x_n$ be private values, each located at one of $n$ clients. The goal of SA
 is to compute a given function $f(x_1,\ldots,x_n)$ in a way that every
 participant learns at most as much about the input values $x_1,\ldots,x_n$
@@ -217,7 +224,7 @@ of the function, where the maximum is taken over all datasets $X,X'$ differing i
 $$M(X) = f(X) + n \textnormal{ where } n \sim \mathcal N_\mathbb{Z}\left(0,\frac{(\Delta f)^2}{2\rho}\right)$$
 is $\rho$-zero-concentrated differentially private~\cite[Proposition 1.6]{DBLP:journals/corr/abs-2004-00010}, where $\mathcal N_\mathbb{Z}(\mu, \sigma^2)$ denotes the discrete Gaussian distribution~\cite{DBLP:journals/corr/abs-2004-00010}.
 
-\paragraph{Local vs. global differential privacy} In a distributed setting, it is relevant to consider at what point in the protocol the noise gets added.
+\paragraph{Local vs.\ global differential privacy} In a distributed setting, it is relevant to consider at what point in the protocol the noise gets added.
 
 Adding noise client-side (\textit{local} differential privacy) does not require entrusting a central party with the non-noised information and the correct execution of the noising. However, each client needs to add the amount of noise required for their privacy guarantee, while it would be sufficient to add that amount once to the sum of all gradients after aggregation.
 
@@ -268,7 +275,7 @@ we mostly refer to the more compact presentation of the original protocol in~\ci
 Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page
 3]{prio}, where each client splits their gradient into a sum of random vectors
 and sends one summand to each server over an encrypted channel. Each server
-sums the shares it recieved and publishes the resulting \textit{aggregate
+sums the shares it received and publishes the resulting \textit{aggregate
   share}, which gets summed with the other servers' aggregate shares to obtain
 the aggregation result. If at least one of the servers is honest-but-curious,
 no party gains knowledge of all secret shares (and hence the plaintext value)
@@ -293,7 +300,7 @@ submitted gradient vectors have L2-norm less than $1$.
 % \subsection{Malicious clients}
 % The presence of malicious clients requires the server to have a way of
 % validating the sensitivity of the aggregation, which in our case consists of
-% checking if the norm of the gradient whose share the server recieved is bounded.
+% checking if the norm of the gradient whose share the server received is bounded.
 % }
 
 \subsection{Deployment model}
@@ -311,7 +318,7 @@ remains private.
 
 The architecture of janus allows for a multitude of aggregation tasks
 to be handled by a single janus instance. It thus naturally lends itself to be
-offered as ``Aggregation-as-a-Service''. This means that for a usecase such as
+offered as ``Aggregation-as-a-Service''. This means that for a use case such as
 ours, the FL stakeholder does not have to deal with setting up Prio
 infrastructure. Instead, the whole point of Prio is that the aggregation servers
 are provided by different parties.
@@ -385,7 +392,7 @@ In each round of training, the following sequence of actions happens:
 
 \section{Threat model and guarantees}
 The controller and the clients have different goals, and thus the threat model
-has to be considered seperately for them. The parties running the aggregation
+has to be considered separately for them. The parties running the aggregation
 servers should be impartial to the learning process, but of course might deviate
 from that behaviour. We consider the perspectives of the clients
 and of the controller below.
@@ -432,7 +439,7 @@ gradient vectors.
 The input validation capability of Prio mitigates this sort of attack.
 As part of the aggregation process, the aggregators verify that each submitted gradient vector
 has an L2-norm less than $1$. This means that while clients still can submit
-``false'' data, they cannot gain unproportional leverage by doing so. Thus, data
+``false'' data, they cannot gain disproportionate leverage by doing so. Thus, data
 poisoning attacks by a minority of clients are mitigated. Prio can only
 guarantee this as long as the aggregation servers do not collude with malicious
 clients, as in that case it would be easy to craft submissions to fool the other
@@ -454,7 +461,7 @@ The protocol describes a distributed implementation of the usual differentially 
   \caption{Client procedure}\label{alg:client}
 
   \begin{algorithmic}[1]
-  \Require Training dataset $X$, loss function $\mathcal L(\theta; x)$, number of rounds $N$, fixed-point encoding bit length $b$, set of aggregator server adresses $\texttt{S}$
+  \Require Training dataset $X$, loss function $\mathcal L(\theta; x)$, number of rounds $N$, fixed-point encoding bit length $b$, set of aggregator server addresses $\texttt{S}$
   \Ensure Model $\theta$ trained on dataset $X$ for $N$ rounds
 
   \State $\textbf{round}_{(b,0)}(x) = \textbf{sign}(x) \cdot \textbf{floor}_b(|x|)$ \Comment{round to $b$ bits towards zero}
@@ -480,7 +487,7 @@ The protocol describes a distributed implementation of the usual differentially 
 \begin{algorithm}[h]
   \caption{Aggregator server procedure}\label{alg:server}
   \begin{algorithmic}[1]
-  \Require Set of client adresses $\texttt{C}$, set of aggregator server adresses $\texttt{S}$, privacy parameter $\rho$, fixed-point encoding bit length $b$
+  \Require Set of client addresses $\texttt{C}$, set of aggregator server addresses $\texttt{S}$, privacy parameter $\rho$, fixed-point encoding bit length $b$
   \Ensure Aggregate gradient, noised to be $\rho$-zero-concentrated differentially private
 
   \State$\textbf{verify}_{\texttt{S}}(\textbf x)$ = perform prio protocol with the other aggregators in \texttt{S} to verify $\textbf x$ is a share of a fixed-point vector with $L_2$ norm $\leq 1$ with entries projected to the integers $\{0,...,2^b\}$ using $\pi$
@@ -512,7 +519,7 @@ We perform the privacy analysis from the point of view of one client executing o
 It follows that the execution of Algorithm~\ref{alg:client} provides $(N\cdot\rho)$-zero-concentrated differential privacy by the composition property \cite[Lemma~1.8 on page 7]{DBLP:journals/corr/BunS16}.
 
 \begin{enumerate}
-\item We want to determine the sensitivity in the dataset $X$ of one iteration of the loop starting at line~\ref{lst:line:loop} of Algorithm~\ref{alg:client}. Assuming the current shared model $\theta$ retrieved in line~\ref{lst:line:retrieve} was computed in a way that provides differential privacy for $X$, its use will not affect the sensitvity. The clipping in line~\ref{lst:line:clip} ensures that 
+\item We want to determine the sensitivity in the dataset $X$ of one iteration of the loop starting at line~\ref{lst:line:loop} of Algorithm~\ref{alg:client}. Assuming the current shared model $\theta$ retrieved in line~\ref{lst:line:retrieve} was computed in a way that provides differential privacy for $X$, its use will not affect the sensitivity. The clipping in line~\ref{lst:line:clip} ensures that 
 \[\|\textbf{g}_{fixed}\|_2 = \|\overline{\textbf{round}}_{(b,0)}(\textbf{g}_{clip})\|_2\leq\|\textbf{g}_{clip}\|_2\leq 1.\]
 Denote by $\textbf{g}'$ the values of the variables in the algorithm obtained by replacing any one entry in $X$ by a different entry, and by $\overline\pi$ the component-wise application of the function $\pi$. We have
 \begin{align*}
@@ -523,7 +530,7 @@ Denote by $\textbf{g}'$ the values of the variables in the algorithm obtained by
 \end{align*}
 One iteration of the computation inside the loop (lines~\ref{lst:line:retrieve} to \ref{lst:line:project}) therefore is $2^b$-sensitive in $X$.
 
-\item Prio secret sharing amounts to the client splitting their secret into summands, and recovering the aggregated shares amounts to summing the sums of secret shares \cite[Scheme on page 3]{prio}. Doing so does not affect the sensitivity of $\textbf{g}_{int}$, as the result of the computation is equal to the result obtained by summing all clients' gradients without secret sharing. Share transfer happens over an encrypted channel \cite[Step 1 of Scheme on page 3]{prio}, combining the shares happens after adding noise on the server in line~\ref{lst:line:noise}. Therefore if at least one of the servers is honest and they don't collude, the only things visible to anyone evesdropping or participating are single secret shares of the gradient and the noised aggregate.
+\item Prio secret sharing amounts to the client splitting their secret into summands, and recovering the aggregated shares amounts to summing the sums of secret shares \cite[Scheme on page 3]{prio}. Doing so does not affect the sensitivity of $\textbf{g}_{int}$, as the result of the computation is equal to the result obtained by summing all clients' gradients without secret sharing. Share transfer happens over an encrypted channel \cite[Step 1 of Scheme on page 3]{prio}, combining the shares happens after adding noise on the server in line~\ref{lst:line:noise}. Therefore if at least one of the servers is honest and they don't collude, the only things visible to anyone eavesdropping or participating are single secret shares of the gradient and the noised aggregate.
 
 \item Noise is added prior to combining the aggregate shares to avoid disclosing the non-noised aggregate to a server. Since combining them simply means computing their sum \cite[Step 3 of Scheme on page 3]{prio}, the value of $\textbf{G}_{agg}$ does not depend on whether the noise is added before or after combining the shares. We can hence view the function mapping one clients' data set $X$ to the non-noised gradient aggregate as a $2^b$-sensitive function over the integers, so adding noise drawn from $\mathcal N_\mathbb{Z}\left(0,\frac{2^{2b}}{2\rho}\right)$ will provide $\rho$-zero-concentrated differential privacy due to~\cite[Theorem 14 on page 15, with all $\sigma_j=\frac{2^{2b}}{2\rho}$]{DBLP:journals/corr/abs-2004-00010}. Mapping the integer encoding of the aggregate back to a float vector and using it in further training will not affect privacy due to post-processing invariance. Note that each server adds the entire amount of noise required to obtain the guarantee, so if at least one of them is honest the guarantee holds. This comes at the cost of adding the entire noise on each server, resulting in worse utility.
 \end{enumerate}
