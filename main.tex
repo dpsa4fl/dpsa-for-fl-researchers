@@ -96,17 +96,22 @@ Concretely, we did the following:
   bounded L2-norm for \texttt{libprio-rs}~\cite{libprio-rs}, a rust implementation
   of the prio protocol.
 \item We added functionality for server differential privacy in
-  \texttt{libprio-rs} and \texttt{janus}~\cite{janus}, which provides the
-  infrastructure for executing the Prio protocol.
+  \texttt{libprio-rs} and \texttt{janus}~\cite{janus}, a rust implementation of
+  the server infrastructure required for Prio.
 \item We developed supporting infrastructure for integrating \texttt{janus} into
   a federated learning pipeline.
 \item We built bindings to use our system from the \texttt{flower} federated
   learning framework.
 \end{itemize}
-{\color{green}TODO: add github links}
-All code is available as open source, see the respective repositories for more
+All code is available as open source, see the respective repositories\footnotemark{} for more
 documentation. In this paper we present the overall architecture as well as a
 privacy and utility analysis.
+
+\footnotetext{The core library is \texttt{dpsa4fl}~\cite{dpsa4fl}.\newline
+  \hspace*{1.8em}Python bindings are provided in
+  \texttt{dpsa4fl-bindings.py}~\cite{dpsa4fl-bindings}.\newline
+  \hspace*{1.8em}The integration with \texttt{flower} is \texttt{dpsa4flower}~\cite{dpsa4flower}.
+}
 
 \paragraph{Privacy and correctness guarantees.}
 Our system requires two aggregation servers that do not collude with each other or clients, one of which must honestly follow protocol. All other participants, namely the clients and a server coordinating federated model updates, can be malicious. We assume that a client interested in their own data's differential privacy executes the protocol correctly. In this setting, we can guarantee anonymity (no adversary can tell which client submitted which data value) and privacy (no adversary learns anything about any honest clients' data values except the differentially private aggregate) as well as differential privacy for all information exchanged about an honest client between all participants as well as the final training result.
