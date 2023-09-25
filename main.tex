@@ -130,7 +130,7 @@ input has to be trusted.
 Other approaches for secure aggregation (beside prio) which also provide input validation are currently based on
 \textit{ring learning with errors}, such as RoFL~\cite{} and ACORN~\cite{acorn}.
 While in RoFL, the input validation results in an 48x increase in communication
-costs, ACORN is successfull in reducing the overhead to 2--10x. Unfortunately,
+costs, ACORN is successful in reducing the overhead to 2--10x. Unfortunately,
 with these being single-server architectures as well, it is not immediately
 clear how differential privacy could be added in a way that the aggregator
 server does not see the unnoised sum of gradients. This means that inference
@@ -271,11 +271,15 @@ of any clients' gradient.
 
 \subsection{Input validation}
 The prio protocol provides \textit{secret-shared non-interactive
-  proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this
-property without disclosing any clients' submissions. Correct validation
-requires all servers to follow the validation protocol honestly, but does not
-disclose any information about honest clients even if all but one server
-deviate.
+  proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate
+the input data, without disclosing any clients' submissions. To do so, the
+required validation criteria have to be encoded as arithmetic circuits.
+Correct validation requires all servers to follow the validation protocol
+honestly, but does not disclose any information about honest clients even if all
+but one server deviate.
+
+For \texttt{dpsa4fl}, we use Prio's input validation to ensure that all
+submitted gradient vectors have L2-norm less than $1$.
 
 
 % NOTE: Excluded, since same content is to be found in 'Threat model & guarantees'
@@ -287,19 +291,25 @@ deviate.
 % checking if the norm of the gradient whose share the server recieved is bounded.
 % }
 
-{\color{blue}
-\subsection{Intended setup.}
-This means that an FL-org can delegate the additionally required infrastructure
-to a ``DAP as a service''-provider, and thus get good privacy guarantees for
-their users without too much organizational overhead.
+\subsection{Deployment model}
+The Prio protocol is successful in disentangling the role of the \textit{data
+  analyst} from the role of the \textit{data aggregator}. The party interested
+in collecting and analyzing data is obviously in the business of extracting valuable
+information from that data, and thus is incentivized to disrespect individual
+users' privacy. Prio allows the task of data aggregation to be delegated to
+third parties, and thus makes it impossible for the data analyst to extract more
+information from the data than it promises publicly to do. From the client's
+perspective, splitting the trust between multiple aggregation servers (and thus
+multiple parties), makes the system especially trustworthy. As long as there is
+reason to believe that the aggregators do not collude, the data
+remains private.
 
-These aggregation servers do not need to be
-  managed by the same organization that is running the FL scheme, since they
-  merely provide a generic aggregation mechanism. They are intended to be long
-  running services which are responsible for processing aggregation jobs for
-  various applications concurrently. In fact, the threat model assumes that at
-  least one aggregation server is run by a separate organization, see section ?.}
-
+The architecture of janus allows for a multitude of aggregation tasks
+to be handled by a single janus instance. It thus naturally lends itself to be
+offered as ``Aggregation-as-a-Service''. This means that for a usecase such as
+ours, the FL stakeholder does not have to deal with setting up Prio
+infrastructure. Instead, the whole point of Prio is that the aggregation servers
+are provided by different parties.
 
 \section{The \texttt{dpsa4fl} system}
 The \texttt{dpsa4fl} system provides differentially private aggregation for FL in a
