@@ -63,37 +63,40 @@ in the training dataset unlikely to be inferrable from the model.
 
 Adding noise locally would require a large amount of noise and hence large
 utility loss to achieve privacy, while globally adding noise after the training
-step would require some party to have access to the non-noised aggregate. Our
-system adds noise after aggregating intermediate results, but keeps the
-aggregate secret (Server-DP~\cite{dprio}). To this end,
-we employ the Prio protocol~\cite{prio} for \emph{secure aggregation} (SA), a technique for multiple
+step would require some party to have access to the non-noised aggregate.
+
+\emph{Secure aggregation} (SA) is a technique for multiple
 participants to compute a function on their confidential data that reveals only
 the computation result without disclosing any other information about the
-inputs to anyone.
-
-We present \texttt{dpsa4fl}, a system which provides Server-DP with
-secure aggregation for federated learning. Our privacy guarantees cover the training result,
-as well as all intermediate aggregation and computation steps.
+inputs to anyone. This can be leveraged to enable adding the noise after aggregating
+intermediate results, but keep the individual contributions and the non-noised
+aggregate secret (\emph{Server-DP}~\cite{dprio}).
 
 
 \paragraph{Contributions.}
-We implement \texttt{dpsa4fl} as a set of wrapping layers which make the prio
-protocol usable from federated learning pipelines. We use the implementation of
-prio from the \texttt{libprio-rs} and \texttt{janus} libraries. In order for
+We present \texttt{dpsa4fl}, a system which provides Server-DP with
+secure aggregation for federated learning. Our privacy guarantees cover the training
+result, as well as all intermediate aggregation and computation steps. We employ the
+prio protocol~\cite{prio} for secure aggregation.
+
+We implement \texttt{dpsa4fl} as a set of wrapping layers which make prio usable
+from federated learning pipelines. In order for
 them to be usable for machine learning, we have to add support for gradient
 vector types, in particular with a verified L2-norm bound. We use
 \texttt{flower} as our target federated learning framework. Concretely, we did the following:
 \begin{itemize}
   \setlength\itemsep{0em}
 \item We designed a ``prio type'' for aggregation of gradient vectors with
-  bounded L2-norm for \texttt{libprio-rs}.
-\item We added functionality for global differential privacy in
-  \texttt{libprio-rs} and \texttt{janus}.
+  bounded L2-norm for \texttt{libprio-rs}~\cite{libprio-rs}, a rust implementation
+  of the prio protocol.
+\item We added functionality for server differential privacy in
+  \texttt{libprio-rs} and \texttt{janus}~\cite{janus}.
 \item We developed supporting infrastructure for integrating \texttt{janus} into
   a federated learning pipeline.
 \item We built bindings to use our system from the \texttt{flower} federated
   learning framework.
 \end{itemize}
+{\color{green}TODO: add github links}
 All code is available as open source, see the respective repositories for more
 documentation. In this paper we present the overall architecture as well as a
 privacy and utility analysis.
@@ -105,7 +108,7 @@ If we can assure both aggregation servers to honestly follow protocol, even whil
 
 \paragraph{Related work.}
 There is a variety of existing work centered around subsets of
-$\{\textrm{DP}, \textrm{FL}, \textrm{SA}, \textrm{SA with IV}\}$ with varying
+$\{\textrm{DP}, \textrm{FL}, \textrm{SA}, \textrm{SA with input validation}\}$ with varying
 architectures and threat models. The most closely related is
 DPrio~\cite{dprio} by Keeler et al.,\ who propose a different mechanism for
 adding differential privacy to the prio protocol. They thus have a very similar
@@ -117,36 +120,38 @@ aggregate. This means that their privacy guarantee depends on the fraction of
 honest clients, while our guarantee only requires one out of two aggregators to
 be honest.
 
+{\color{green}TODO: add missing references}
 There is a series of papers~\cite{Kairouz2021TheDD}~\cite{}~\cite{} based on the original
 SecAgg~\cite{secagg} protocol by Bonawitz et al. They follow the explicit goal
-of providing differential privacy specifically for FL tasks.
-The difference in applicability with the present work comes from the fact that SecAgg is a protocol
+of providing differential privacy specifically for FL tasks. SecAgg is a protocol
 with a single-server architecture, which means that the threat model, and thus
-the trade-offs in protocol design are quite different from ours. Additionally
-there is currently no input validation integrated which means that the clients'
-input has to be trusted.
+the trade-offs in protocol design, are quite different from the ones used in the present work.
+Aditionally, SecAg currently does not integrate input validation and hence does not protect
+against malicious clients.
 
-Other approaches for secure aggregation (beside prio) which also provide input validation are currently based on
+{\color{green}TODO: add missing references}
+Approaches to secure aggregation with input validation other than prio are based on
 \textit{ring learning with errors}, such as RoFL~\cite{} and ACORN~\cite{acorn}.
 While in RoFL, the input validation results in an 48x increase in communication
-costs, ACORN is successfull in reducing the overhead to 2--10x. Unfortunately,
+costs, ACORN is successful in reducing the overhead to 2--10x. Unfortunately,
 with these being single-server architectures as well, it is not immediately
 clear how differential privacy could be added in a way that the aggregator
-server does not see the unnoised sum of gradients. This means that inference
-attacks such as~\cite{7958568} would still succeed in this settings.
+server does not see the non-noised sum of gradients. Protection against inference
+attacks such as~\cite{7958568} hence can only be guaranteed if the server is honest.
 
-An approach which integrates differential privacy, but not input validation
+An approach which integrates differential privacy but not input validation
 is FLDP~\cite{Stevens2021EfficientDP} by Stevens et al. They achieve an overhead
 of 1.7x.
 
-Finally, with all mentioned works being mostly theoretical papers, the
+{\color{green}TODO: add missing reference, also in footnote}
+Finally, with all mentioned work being mostly theoretical papers, the
 options for actually running real-world FL tasks seem to be few:
 \begin{itemize}
   \setlength\itemsep{0em}
 \item There are building blocks for both secure aggregation (based on SecAgg) and for local or
-  global differential privacy in flower\footnote{See the documentation here and
-    here}, but simply putting them together does not protect against inference
-  attacks.
+  global differential privacy in flower\footnote{See the documentation here~\cite{} and
+    here~\cite{}}, but simply putting them together does not protect against inference
+  attacks.{\color{green}TODO: why?}
 \item The authors of DPrio provide source code~\cite{} for their empirical evaluation in
   terms of a simulation of FL, but such simulation code is far from enough for
   real-world deployments.
@@ -162,36 +167,35 @@ options for actually running real-world FL tasks seem to be few:
 \subsection{Federated Learning}
 Federated learning is a machine learning technique introduced
 by~\citet{FL}, aiming to avoid centralized data collection by a single
-party performing the training. Instead, data owners (clients) obtain a copy of
+party performing the training. Instead, clients obtain a copy of
 the global model and train it on their private data locally. Model updates are
-then collected by a central party (FL~server) and aggregated into an update for
-the global model. The global model is distributed to the clients again and the
+then collected by a central party (\emph{FL~server}) and aggregated into an update for
+the global model. The updated global model is distributed to the clients again and the
 procedure is repeated until model performance is statisfactory.
 
 While removing the need for central data collection, the above scheme still
 requires clients to disclose the model updates they derived from their private
-data, which contain enough information for reconstruction attacks such as
+data, which contain enough information for reconstruction attacks like the ones
 detailed in~\cite{7958568,Boenisch2021WhenTC}. It seems that differential
-privacy, in particular combined with secure aggregation, is the best approach to
-preserve the clients' privacy. See~\cite{fl-survey} for an extensive survey.
+privacy combined with secure aggregation is the best approach to
+preserve the clients' privacy in this setting. See~\cite{fl-survey} for an extensive survey.
 
-\subsection{Secure Aggregation}
+\subsection{Secure Aggregation and Input Validation}
 Secure aggregation allows for the aggregation of secret distributed data in a
-way that only the aggregate is being published. More concretely, let
-$x_1,\ldots,x_n$ stand for private values located at $n$ clients. The goal of SA
-is to compute a given function $f(x_1,\ldots,x_n)$, in a way such that every
-participant learns at most as much about the distribution of input values
-$x_1,\ldots,x_n$, as could be deduced mathematically from only knowing the result of
-$f$.
+way that reveals only the aggregate resule. More concretely, let
+$x_1,\ldots,x_n$ be private values, each located at one of $n$ clients. The goal of SA
+is to compute a given function $f(x_1,\ldots,x_n)$ in a way that every
+participant learns at most as much about the input values $x_1,\ldots,x_n$
+as can be deduced mathematically from only knowing the result of $f$.
 
 {\color{red}TODO: add reference}
 
-Another topic related with SA is input validation. In some cases, it might be
+A topic related to SA is input validation. In some cases, it might be
 required that the data submitted by clients fulfills certain properties, such as
-for example to lie within certain numerical bounds. Since the aggregating servers
+lying within certain numerical bounds. Since the aggregating servers
 do not see the submissions in plaintext, they cannot easily check whether this
-is the case. Solutions usually involve some sort of zero-knowledge proof
-protocols, where the aggregation servers or clients interact with each other in
+is the case. Solutions usually involve zero-knowledge proof
+protocols, where aggregation servers or clients interact with each other in
 order to convince themselves of the validity of the data---without revealing it.
 
 
@@ -211,7 +215,7 @@ One way of achieving differential privacy for a deterministic function $f$ is by
 $$\Delta f=\max\{\|f(X)-f(X')\|_2\}$$
 of the function, where the maximum is taken over all datasets $X,X'$ differing in a single entry. For example, for an integer-valued function $f:\mathcal X\rightarrow \mathbb Z$ the randomized function
 $$M(X) = f(X) + n \textnormal{ where } n \sim \mathcal N_\mathbb{Z}\left(0,\frac{(\Delta f)^2}{2\rho}\right)$$
-is $\rho$-zero-concentrated differentially private~\cite[Proposition 1.6]{DBLP:journals/corr/abs-2004-00010}.
+is $\rho$-zero-concentrated differentially private~\cite[Proposition 1.6]{DBLP:journals/corr/abs-2004-00010}, where $\mathcal N_\mathbb{Z}(\mu, \sigma^2)$ denotes the discrete Gaussian distribution~\cite{DBLP:journals/corr/abs-2004-00010}.
 
 \paragraph{Local vs. global differential privacy} In a distributed setting, it is relevant to consider at what point in the protocol the noise gets added.
 
@@ -220,18 +224,20 @@ Adding noise client-side (\textit{local} differential privacy) does not require 
 The usual relief for this is adding noise on a central server (\textit{global} differential privacy). This requires trust in the noising party, as they get access to the non-noised aggregate and need to do the noising faithfully.
 
 Another approach, which becomes viable in conjunction with some forms of secure aggregation, is
-to perform noising on the aggregation servers prior to recombining the aggregate
-shares, so even the aggregators never see the non-noised aggregate gradient (this
-technique has been coined Server-DP~\cite{dprio}).
+to perform noising on the aggregation servers prior to performing their computation on the encrypted
+client inputs, so even the aggregators never see the non-noised aggregate gradient (this
+technique has been coined Server DP~\cite{dprio}).
 
 It is still more noise added than necessary in order to distribute the trust:
 each server adds the full amount of noise necessary for all clients' guarantees,
 allowing for all but one aggregator to maliciously deviate from protocol without
-compromising differential privacy.
+compromising differential privacy. However, with Server DP the noise scales with the number of
+aggregation servers (of which only two are required, if the threat model allows it), while
+with local DP it scales with the number of clients.
 
 \paragraph{Robustness}
 
-Differential privacy not only protects from inference attacks, but also limits the influence a single gradients' value can have on the training result. This is a viable defense against \textit{data poisoning attacks} by malicious clients attempting to sabotage or sway training results in their favour.
+Differential privacy not only protects from inference attacks, but also limits the influence a single gradients' value can have on the training result. This is a viable defense against \textit{data poisoning attacks} by malicious clients attempting to sabotage or sway training results in their favour. Note that providing differential privacy for clients that don't have an interest in having differential privacy is not trivial in a setting where secure aggregation is used. A usual approach to bounding the sensitivity of many functions is bounding the inputs -- something that the noising parties cannot easily do if they don't have access to the plaintext values. Input validation is a relief, but in our case comes with additional trust requirements.
 
 {\color{red}TODO: add reference}
 
