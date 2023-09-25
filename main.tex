@@ -259,6 +259,24 @@ with the other servers' aggregate shares to obtain the aggregation result.
 least one of the servers is honest-but-curious, no party gains knowledge of all
 secret shares (and hence the plaintext value) of any clients' gradient.}
 
+
+{\color{blue}These aggregation servers do not need to be
+  managed by the same organization that is running the FL scheme, since they
+  merely provide a generic aggregation mechanism. They are intended to be long
+  running services which are responsible for processing aggregation jobs for
+  various applications concurrently. In fact, the threat model assumes that at
+  least one aggregation server is run by a separate organization, see section ?}.
+
+{\color{blue} It is important to note that each aggregation server receives only a ``share''
+  of every clients' gradient vector. It is impossible to reconstruct the original
+  vector from this share alone. All processing on the aggregation server, i.e.,
+  the verification, aggregation and noising happens in terms of its shares.
+  Only the subsequent combination of the resuls from both aggregation servers gives
+  us a plaintext value: the sum of all gradient vectors, together with noise. From
+  this value too it is sufficiently improbable to conclude properties of
+  individual clients' submissions. See section  for a more detailed analysis.}
+
+
 \subsection{Malicious clients}
 The presence of malicious clients requires the server to have a way of validating the sensitivity of the aggregation, which in our case consists of checking if the norm of the gradient whose share the server recieved is bounded. The prio protocol provides \textit{secret-shared non-interactive proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this property without disclosing any clients' submissions. Correct validation requires all servers to follow the validation protocol honestly, but does not disclose any information about honest clients even if all but one server deviate.
 
@@ -295,41 +313,40 @@ servers we call it the \textit{controller}.
 The FL framework remains responsible for all functionality of the training
 process, except for gradient aggregation. This includes broadcasting of the
 current model, selecting clients for training, and applying the aggregated
-gradients to the model.
+gradients to the model. The aggregation servers are responsible for securely
+aggregating the clients' gradients and adding noise to guarantee differential
+privacy. The \texttt{dpsa4fl} stack provides the glue code for making this all
+work.
 
-The janus servers are responsible for making the aggregation of clients'
-gradients secure and private. {\color{blue}These aggregation servers do not need to be
-managed by the same organization that is running the FL scheme, since they
-merely provide a generic aggregation mechanism. They are intended to be long
-running services which are responsible for processing aggregation jobs for
-various applications concurrently. In fact, the threat model assumes that at
-least one aggregation server is run by a separate organization, see section ?}.
+\subsection{Integrating into an FL framework}
+We begin by describing how \texttt{dpsa4fl} is intended to be used by FL
+frameworks. We use flower as target framework in the explanation.
 
-\subsection{Implementation}
-
-We describe how a single round of an FL-scheme is executed:
+Before starting the training process, the controller notifies both aggregators
+that it's starting a training session with a given id. The aggregators store
+session related information under this id. No further \texttt{dpsa4fl}-specific
+setup has to be done.
+In each round of training, the following sequence of actions happens:
 \begin{enumerate}[itemsep=0mm]
-\item The controller selects available clients for this round and broadcasts its model to them.
-\item The clients train their copy of the model on their local training data and
+\item \texttt{dpsa4fl}: The controller notifies both aggregators that it's
+  starting a training round, and receives a task id under which it can collect
+  the aggregation result.
+\item \texttt{Flower}: The controller selects available clients for this round
+  and broadcasts its model, as well as the task id to them.
+\item \texttt{Flower}: The clients train their copy of the model on their local training data and
   compute the overall gradient vector.
-\item They encode and split the gradient vector according to the prio protocol
-  and submit each part to an aggregation server.
-\item The aggregation servers aggregate reports from all clients, verify them,
+\item \texttt{Flower}: They use flower's aggregation method to notify the
+  controller that they have succeeded with training, but don't transmit the gradient.
+\item \texttt{dpsa4fl}: They split and encode the gradient vector according to the prio protocol
+  and submit each part under the given task id to an aggregation server.
+\item \texttt{Prio}: The aggregation servers aggregate reports from all clients, verify them,
   add noise for differential privacy and compute the sum of all gradient vectors.
-\item The controller gets this gradient vector, applies it to its model, and
-  begins the next round.
+\item \texttt{dpsa4fl}: The controller collects the gradient vector via its task id.
+\item \texttt{Flower}: It applies the gradient to the global model, and begins the next round.
 \end{enumerate}
-{\color{blue} It is important to note that each aggregation server receives only a ``share''
-of every clients' gradient vector. It is impossible to reconstruct the original
-vector from this share alone. All processing on the aggregation server, i.e.,
-the verification, aggregation and noising happens in terms of its shares.
-Only the subsequent combination of the resuls from both aggregation servers gives
-us a plaintext value: the sum of all gradient vectors, together with noise. From
-this value too it is sufficiently improbable to conclude properties of
-individual clients' submissions. See section  for a more detailed analysis.}
 
-\paragraph{On the client}
-bla bla bla.
+\subsection{Functionality}
+The protocol describes a distributed implementation of the usual differentially private gradient descent \cite{Abadi_2016}, with the differences being the integer encoding of the gradient vector to enable secret sharing according to the prio protocol \cite{prio}, the aggregation happening on a different machine than the training itself, and the use of discrete Gaussian noise on the integer encoding of the gradient aggregate.
 \begin{algorithm}[h]
   \caption{Client procedure}\label{alg:client}
 
@@ -356,8 +373,6 @@ bla bla bla.
 \end{algorithm}
 
 
-\paragraph{Special}
- The protocol describes a distributed implementation of the usual differentially private gradient descent \cite{Abadi_2016}, with the differences being the integer encoding of the gradient vector to enable secret sharing according to the prio protocol \cite{prio}, the aggregation happening on a different machine than the training itself, and the use of discrete Gaussian noise on the integer encoding of the gradient aggregate.
 
 
 \begin{algorithm}[h]
