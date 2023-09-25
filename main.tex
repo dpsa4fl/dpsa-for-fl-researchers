@@ -185,6 +185,8 @@ participant learns at most as much about the distribution of input values
 $x_1,\ldots,x_n$, as could be deduced mathematically from only knowing the result of
 $f$.
 
+{\color{red}TODO: add reference}
+
 Another topic related with SA is input validation. In some cases, it might be
 required that the data submitted by clients fulfills certain properties, such as
 for example to lie within certain numerical bounds. Since the aggregating servers
@@ -218,21 +220,31 @@ Adding noise client-side (\textit{local} differential privacy) does not require 
 
 The usual relief for this is adding noise on a central server (\textit{global} differential privacy). This requires trust in the noising party, as they get access to the non-noised aggregate and need to do the noising faithfully.
 
-We perform noising on the aggregation servers prior to recombining the aggregate shares, so even the servers never see the non-noised aggregate gradient (this technique has been coined \emph{server} differential privacy~\cite{dprio}). We are still adding more noise than necessary in order to distribute the trust: each server adds the full amount of noise necessary for all clients' guarantees, allowing for all but one aggregator to maliciously deviate from protocol without compromising differential privacy.
+Another approach, which becomes viable in conjunction with some forms of secure aggregation, is
+to perform noising on the aggregation servers prior to recombining the aggregate
+shares, so even the aggregators never see the non-noised aggregate gradient (this
+technique has been coined Server-DP~\cite{dprio}).
+
+It is still more noise added than necessary in order to distribute the trust:
+each server adds the full amount of noise necessary for all clients' guarantees,
+allowing for all but one aggregator to maliciously deviate from protocol without
+compromising differential privacy.
 
 \paragraph{Robustness}
+
 Differential privacy not only protects from inference attacks, but also limits the influence a single gradients' value can have on the training result. This is a viable defense against \textit{data poisoning attacks} by malicious clients attempting to sabotage or sway training results in their favour.
+
+{\color{red}TODO: add reference}
 
 
 
 \section{Secure aggregation with Prio}
-The protocol has been designed by Corrigan-Gibbs and Boneh in~\cite{prio} as a
+The Prio protocol has been designed by Corrigan-Gibbs and Boneh in~\cite{prio} as a
 way to securely aggregate client data with two aggregation servers. As long as
-one server remains honest, the data remains private. The outstanding feature of
+one server remains honest, the data remains private. One outstanding feature of
 prio is that the validity of the submitted data can be verified by the
 aggregators without them having access to the data itself (\textit{input
-  validation}). This is done using arithmetic circuits, which have to be
-designed for each specific use-case individually.
+  validation}).
 
 The original prio protocol has since been improved, and, under the name of Prio3, integrated into the
 more general framework of \textit{verifiable distributed aggregation
@@ -248,42 +260,39 @@ explanations in the present paper
 we mostly refer to the more compact presentation of the original protocol in~\cite{prio}.
 
 \subsection{Prio architecture}
-We employ the \textit{prio protocol}~\cite{prio} to compute the sum of client
-gradients without the need to disclose individual gradients to anyone. Prio uses
-a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page 3]{prio}, where
-each client splits their gradient into a sum of random vectors and sends one
-summand to each server over an encrypted channel. Each server sums the shares it
-recieved and publishes the resulting \textit{aggregate share}, which gets summed
-with the other servers' aggregate shares to obtain the aggregation result.
-{\color{blue} If at
-least one of the servers is honest-but-curious, no party gains knowledge of all
-secret shares (and hence the plaintext value) of any clients' gradient.}
+ Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page
+ 3]{prio}, where each client splits their gradient into a sum of random vectors
+ and sends one summand to each server over an encrypted channel. Each server
+ sums the shares it recieved and publishes the resulting \textit{aggregate
+   share}, which gets summed with the other servers' aggregate shares to obtain
+ the aggregation result. If at least one of the servers is honest-but-curious,
+ no party gains knowledge of all secret shares (and hence the plaintext value)
+ of any clients' gradient.
 
 
-{\color{blue}These aggregation servers do not need to be
-  managed by the same organization that is running the FL scheme, since they
-  merely provide a generic aggregation mechanism. They are intended to be long
-  running services which are responsible for processing aggregation jobs for
-  various applications concurrently. In fact, the threat model assumes that at
-  least one aggregation server is run by a separate organization, see section ?}.
-
-{\color{blue} It is important to note that each aggregation server receives only a ``share''
-  of every clients' gradient vector. It is impossible to reconstruct the original
-  vector from this share alone. All processing on the aggregation server, i.e.,
-  the verification, aggregation and noising happens in terms of its shares.
-  Only the subsequent combination of the resuls from both aggregation servers gives
-  us a plaintext value: the sum of all gradient vectors, together with noise. From
-  this value too it is sufficiently improbable to conclude properties of
-  individual clients' submissions. See section  for a more detailed analysis.}
-
-
+ {\color{blue}
 \subsection{Malicious clients}
-The presence of malicious clients requires the server to have a way of validating the sensitivity of the aggregation, which in our case consists of checking if the norm of the gradient whose share the server recieved is bounded. The prio protocol provides \textit{secret-shared non-interactive proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this property without disclosing any clients' submissions. Correct validation requires all servers to follow the validation protocol honestly, but does not disclose any information about honest clients even if all but one server deviate.
+The presence of malicious clients requires the server to have a way of
+validating the sensitivity of the aggregation, which in our case consists of
+checking if the norm of the gradient whose share the server recieved is bounded.
+The prio protocol provides \textit{secret-shared non-interactive
+  proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this
+property without disclosing any clients' submissions. Correct validation
+requires all servers to follow the validation protocol honestly, but does not
+disclose any information about honest clients even if all but one server
+deviate.
 
 \subsection{Intended setup.}
 This means that an FL-org can delegate the additionally required infrastructure
 to a ``DAP as a service''-provider, and thus get good privacy guarantees for
 their users without too much organizational overhead.
+
+These aggregation servers do not need to be
+  managed by the same organization that is running the FL scheme, since they
+  merely provide a generic aggregation mechanism. They are intended to be long
+  running services which are responsible for processing aggregation jobs for
+  various applications concurrently. In fact, the threat model assumes that at
+  least one aggregation server is run by a separate organization, see section ?.}
 
 
 \section{The \texttt{dpsa4fl} system}
@@ -299,7 +308,7 @@ framework in the package \texttt{dpsa4flwr}.
 \subsection{Architecture}
 A distributed FL system using \texttt{dpsa4fl} thus consists of
 two parts~(figure~\ref{fig:architecture}): the original participants as envisioned by the FL
-framework, i.e., a server and multiple clients, and two janus aggregation servers
+framework, i.e., a server and multiple clients, and two Prio (janus) aggregation servers
 executing the Prio protocol. To differentiate the FL server from the aggregation
 servers we call it the \textit{controller}.
 
@@ -313,9 +322,16 @@ servers we call it the \textit{controller}.
 The FL framework remains responsible for all functionality of the training
 process, except for gradient aggregation. This includes broadcasting of the
 current model, selecting clients for training, and applying the aggregated
-gradients to the model. The aggregation servers are responsible for securely
-aggregating the clients' gradients and adding noise to guarantee differential
-privacy. The \texttt{dpsa4fl} stack provides the glue code for making this all
+gradients to the model.
+
+The aggregation servers execute the Prio protocol, thereby computing the sum of
+the clients' gradients, without the need to disclose individual gradients to
+anyone. They also verify that all individually submitted vectors have L2-norm
+less than one. Finally, before revealing the aggregated gradient to the
+collector, each aggregation server adds noise to their own aggregate share, in
+order to ensure differential privacy.
+
+The \texttt{dpsa4fl} stack provides the glue code for making this all
 work.
 
 \subsection{Integration with an FL framework}
@@ -366,13 +382,21 @@ ways this might happen:
 \end{enumerate}
 Our system guarantees the following: As long as at least one aggregation server
 follows the protocol (i.e., is honest-but-curious), the client's data remains
-private. Attack (1) is mitigated by the secure aggregation mechanism of DAP.
-As long as the aggregation servers don't collude, they don't have access to
-individual gradients. Attack (2) is mitigated by the fact that the sum of
+private.
+
+Attack (1) is mitigated by the secure aggregation mechanism of Prio.
+Each aggregation server receives only a share
+the clients' gradient vectors. It is impossible to reconstruct the original
+vector from this share alone. All processing on the aggregation server, i.e.,
+the verification, aggregation and noising happens in terms of its shares.
+This means that, as long as the aggregation servers don't collude, they don't
+have access to individual gradients.
+
+Attack (2) is mitigated by the fact that the sum of
 gradient vectors is never revealed by itself, but only together with the noise added by
 both aggregation servers. As long as at least one aggregation server adds
 correctly configured noise, this makes the revealed value differentially
-private. Differential privacy mitigates inference attacks (source).
+private. Differential privacy mitigates inference attacks {\color{red}TODO: source}.
 
 In practice this means: clients can be sure that their data is safe as long as
 they trust one of the aggregation servers to be honest in their execution of the
@@ -384,12 +408,12 @@ gradients, this introduces the possibility of data poisoning attacks: malicious
 clients can try to influence the learning process by submitting exaggerated
 gradient vectors.
 
-The DAP is designed to mitigate this sort of attack. Even though the aggregation
+The Prio is designed to mitigate this sort of attack. Even though the aggregation
 servers do not have access to individual plaintext gradients, they have a
 protocol for verifying that each of the submitted reports is well-formed, i.e.,
 has an L2-norm less than $1$. This means that while clients still can submit
 ``false'' data, they cannot gain unproportional leverage by doing so. Thus, data
-poisoning attacks by a minority of clients are mitigated. The DAP can only
+poisoning attacks by a minority of clients are mitigated. The Prio can only
 guarantee this as long as the aggregation servers do not collude with malicious
 clients, as in that case it would be easy to craft submissions to fool the other
 aggregation server into believing that reports are well-formed, even though they
