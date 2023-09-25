@@ -269,20 +269,21 @@ their users without too much organizational overhead.
 
 
 \section{The \texttt{dpsa4fl} system}
-The \texttt{dpsa4fl} library enables the use of the \textit{Distributed Aggregation Protocol} (DAP) for
-aggregation of gradient vectors in the context of federated machine learning. It
-is currently specialized to work with the janus implementation of DAP,
-and the flower machine learning framework.
-In practice this means that our library \texttt{dpsa4flwr} allows users of flower
-to replace the native aggregation process with our alternative aggregation flow
-going through a separate janus instance.
+The \texttt{dpsa4fl} system provides differentially private aggregation for FL in a
+modular way. It is designed to be an alternative aggregation mechanism which can
+be plugged into existing FL frameworks. The \texttt{dpsa4fl} core library
+enables the use of the Prio protocol for aggregation of gradient vectors in the
+context of FL. It is currently specialized to work with the \texttt{janus}
+implementation of Prio. We provide python bindings in the package
+\texttt{dpsa4fl-bindings.py}, and an easy-to-use integration with the flower
+framework in the package \texttt{dpsa4flwr}.
 
 \subsection{Architecture}
-A distributed FL system using \texttt{dpsa4fl} (figure \ref{fig:architecture}) can thus be
-subdivided into two parts: the original participants of a given federated
-learning scheme (comprised of a server and multiple clients), and two
-janus aggregation servers executing the DAP. To differentiate the FL server from
-the aggregation servers we call it the \textit{controller}.
+A distributed FL system using \texttt{dpsa4fl} thus consists of
+two parts~(figure~\ref{fig:architecture}): the original participants as envisioned by the FL
+framework, i.e., a server and multiple clients, and two janus aggregation servers
+executing the Prio protocol. To differentiate the FL server from the aggregation
+servers we call it the \textit{controller}.
 
 \begin{figure}[h]
   \centering
@@ -291,18 +292,18 @@ the aggregation servers we call it the \textit{controller}.
   \label{fig:architecture}
 \end{figure}
 
-The FL framework, i.e., flower, remains responsible for all functions of an FL
-scheme, except for gradient aggregation. This includes broadcasting of the
+The FL framework remains responsible for all functionality of the training
+process, except for gradient aggregation. This includes broadcasting of the
 current model, selecting clients for training, and applying the aggregated
 gradients to the model.
 
 The janus servers are responsible for making the aggregation of clients'
-gradients secure and private. These aggregation servers do not need to be
+gradients secure and private. {\color{blue}These aggregation servers do not need to be
 managed by the same organization that is running the FL scheme, since they
 merely provide a generic aggregation mechanism. They are intended to be long
 running services which are responsible for processing aggregation jobs for
 various applications concurrently. In fact, the threat model assumes that at
-least one aggregation server is run by a separate organization, see section ?.
+least one aggregation server is run by a separate organization, see section ?}.
 
 \subsection{Implementation}
 
