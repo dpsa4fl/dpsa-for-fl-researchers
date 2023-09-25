@@ -132,16 +132,16 @@ aggregate. This means that their privacy guarantee depends on the fraction of
 honest clients, while our guarantee only requires one out of two aggregators to
 be honest.
 
-{\color{green}TODO: add missing references}
-There is a series of papers~\cite{Kairouz2021TheDD}~\cite{}~\cite{} based on the original
-SecAgg~\cite{secagg} protocol by Bonawitz et al. They follow the explicit goal
-of providing differential privacy specifically for FL tasks. SecAgg is a protocol
-with a single-server architecture, which means that the threat model, and thus
-the trade-offs in protocol design, are quite different from the ones used in the present work.
-Additionally, SecAg currently does not integrate input validation and hence does not protect
-against malicious clients.
+There is a series of
+papers~\cite{SecAggImprovement,Kairouz2021TheDD,SecAggSkellam,SecAggFundamental}
+based on the original SecAgg~\cite{secagg} protocol by Bonawitz et al. They
+follow the explicit goal of providing differential privacy specifically for FL
+tasks. SecAgg is a protocol with a single-server architecture, which means that
+the threat model, and thus the trade-offs in protocol design, are quite
+different from the ones used in the present work. Additionally, SecAg currently
+does not integrate input validation and hence does not protect against malicious
+clients.
 
-{\color{green}TODO: add missing references}
 Approaches to secure aggregation with input validation other than prio are based on
 \textit{ring learning with errors}, such as RoFL~\cite{rofl} and ACORN~\cite{acorn}.
 While in RoFL, the input validation results in an 48x increase in communication
@@ -155,23 +155,22 @@ An approach which integrates differential privacy but not input validation
 is FLDP~\cite{Stevens2021EfficientDP} by Stevens et al. They achieve an overhead
 of 1.7x.
 
-{\color{green}TODO: add missing reference, also in footnote}
 Finally, with all mentioned work being mostly theoretical papers, the
 options for actually running real-world FL tasks seem to be few:
 \begin{itemize}
   \setlength\itemsep{0em}
-\item There are building blocks for both secure aggregation (based on SecAgg) and for local or
-  global differential privacy in flower\footnote{See the documentation here~\cite{} and
-    here~\cite{}}, but simply putting them together does not protect against inference
-  attacks.{\color{green}TODO: why?}
-\item The authors of DPrio provide source code~\cite{} for their empirical evaluation in
+\item There are building blocks for both secure aggregation\footnote{\url{https://flower.dev/docs/framework/contributor-ref-secure-aggregation-protocols.html}}
+  (based on SecAgg) and for local or global differential privacy\footnote{\url{https://flower.dev/docs/framework/explanation-differential-privacy.html}} in flower. But
+  simply putting them together is not sufficient if the flower server is not trusted: In case of global DP, the
+  server has access to the non-noised aggregate. In case of local DP, the
+  utility loss is too high to provide an adequate amount of privacy.
+\item The authors of DPrio provide source code\footnote{\url{https://github.com/DPrio-PoPETs/dprio}} for their empirical evaluation in
   terms of a simulation of FL, but such simulation code is far from enough for
   real-world deployments.
 \item In a similar vein, the authors of e.g.~\cite{Kairouz2021TheDD} provide
   source code which is based on TensorFlow Federated~\cite{tff}. Unfortunately this
   framework is currently only usable for simulations as well.
 \end{itemize}
-
 
 
 \section{Preliminaries}
