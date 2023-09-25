@@ -265,40 +265,56 @@ explanations in the present paper
 we mostly refer to the more compact presentation of the original protocol in~\cite{prio}.
 
 \subsection{Prio architecture}
- Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page
- 3]{prio}, where each client splits their gradient into a sum of random vectors
- and sends one summand to each server over an encrypted channel. Each server
- sums the shares it recieved and publishes the resulting \textit{aggregate
-   share}, which gets summed with the other servers' aggregate shares to obtain
- the aggregation result. If at least one of the servers is honest-but-curious,
- no party gains knowledge of all secret shares (and hence the plaintext value)
- of any clients' gradient.
+Prio uses a \textit{secret sharing scheme}~\cite[Step 1 of scheme on page
+3]{prio}, where each client splits their gradient into a sum of random vectors
+and sends one summand to each server over an encrypted channel. Each server
+sums the shares it recieved and publishes the resulting \textit{aggregate
+  share}, which gets summed with the other servers' aggregate shares to obtain
+the aggregation result. If at least one of the servers is honest-but-curious,
+no party gains knowledge of all secret shares (and hence the plaintext value)
+of any clients' gradient.
 
-
- {\color{blue}
-\subsection{Malicious clients}
-The presence of malicious clients requires the server to have a way of
-validating the sensitivity of the aggregation, which in our case consists of
-checking if the norm of the gradient whose share the server recieved is bounded.
+\subsection{Input validation}
 The prio protocol provides \textit{secret-shared non-interactive
-  proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate this
-property without disclosing any clients' submissions. Correct validation
-requires all servers to follow the validation protocol honestly, but does not
-disclose any information about honest clients even if all but one server
-deviate.
+  proofs}~\cite[Section 4]{prio} to allow the servers to jointly validate
+the input data, without disclosing any clients' submissions. To do so, the
+required validation criteria have to be encoded as arithmetic circuits.
+Correct validation requires all servers to follow the validation protocol
+honestly, but does not disclose any information about honest clients even if all
+but one server deviate.
 
-\subsection{Intended setup.}
-This means that an FL-org can delegate the additionally required infrastructure
-to a ``DAP as a service''-provider, and thus get good privacy guarantees for
-their users without too much organizational overhead.
+For \texttt{dpsa4fl}, we use Prio's input validation to ensure that all
+submitted gradient vectors have L2-norm less than $1$.
 
-These aggregation servers do not need to be
-  managed by the same organization that is running the FL scheme, since they
-  merely provide a generic aggregation mechanism. They are intended to be long
-  running services which are responsible for processing aggregation jobs for
-  various applications concurrently. In fact, the threat model assumes that at
-  least one aggregation server is run by a separate organization, see section ?.}
 
+% NOTE: Excluded, since same content is to be found in 'Threat model & guarantees'
+%
+%  {\color{blue}
+% \subsection{Malicious clients}
+% The presence of malicious clients requires the server to have a way of
+% validating the sensitivity of the aggregation, which in our case consists of
+% checking if the norm of the gradient whose share the server recieved is bounded.
+% }
+
+\subsection{Deployment model}
+The Prio protocol is successful in disentangling the role of the \textit{data
+  analyst} from the role of the \textit{data aggregator}. The party interested
+in collecting and analyzing data is obviously in the business of extracting valuable
+information from that data, and thus is incentivized to disrespect individual
+users' privacy. Prio allows the task of data aggregation to be delegated to
+third parties, and thus makes it impossible for the data analyst to extract more
+information from the data than it promises publicly to do. From the client's
+perspective, splitting the trust between multiple aggregation servers (and thus
+multiple parties), makes the system especially trustworthy. As long as there is
+reason to believe that the aggregators do not collude, the data
+remains private.
+
+The architecture of janus allows for a multitude of aggregation tasks
+to be handled by a single janus instance. It thus naturally lends itself to be
+offered as ``Aggregation-as-a-Service''. This means that for a usecase such as
+ours, the FL stakeholder does not have to deal with setting up Prio
+infrastructure. Instead, the whole point of Prio is that the aggregation servers
+are provided by different parties.
 
 \section{The \texttt{dpsa4fl} system}
 The \texttt{dpsa4fl} system provides differentially private aggregation for FL in a
@@ -413,12 +429,11 @@ gradients, this introduces the possibility of data poisoning attacks: malicious
 clients can try to influence the learning process by submitting exaggerated
 gradient vectors.
 
-The Prio is designed to mitigate this sort of attack. Even though the aggregation
-servers do not have access to individual plaintext gradients, they have a
-protocol for verifying that each of the submitted reports is well-formed, i.e.,
+The input validation capability of Prio mitigates this sort of attack.
+As part of the aggregation process, the aggregators verify that each submitted gradient vector
 has an L2-norm less than $1$. This means that while clients still can submit
 ``false'' data, they cannot gain unproportional leverage by doing so. Thus, data
-poisoning attacks by a minority of clients are mitigated. The Prio can only
+poisoning attacks by a minority of clients are mitigated. Prio can only
 guarantee this as long as the aggregation servers do not collude with malicious
 clients, as in that case it would be easy to craft submissions to fool the other
 aggregation server into believing that reports are well-formed, even though they
@@ -598,10 +613,13 @@ a balance which optimizes message size has to be found.
   \end{axis}
 \end{tikzpicture}
 
-
-
-
 \section{Conclusion}
+While in particular the previous section concerning message complexity
+illustrates that \texttt{dpsa4fl} is not yet ready for real deployments, the
+existing work is quite promising. The \texttt{libprio-rs} and \texttt{janus}
+libraries were comparably easy to extend, and the threat model provided by Prio
+seems to be strong and yet pragmatic enough, for it to gain widespread adoption.
+Ideas for approaches to minimize message sizes exist, and are left for future work.
 
 \bibliographystyle{plainnat}
 \bibliography{doc}
