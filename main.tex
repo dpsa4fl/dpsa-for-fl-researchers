@@ -1,7 +1,7 @@
 \documentclass{article}
 
 \usepackage[numbers]{natbib}
-\usepackage{hyperref}
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
 \usepackage{xcolor}
 \hypersetup{
   colorlinks,
@@ -328,13 +328,12 @@ are provided by different parties.
 \section{The \texttt{dpsa4fl} system}
 The \texttt{dpsa4fl} system provides differentially private aggregation for FL in a
 modular way. It is designed to be an alternative aggregation mechanism which can
-be plugged into existing FL frameworks. The \texttt{dpsa4fl} core library
+be plugged into existing FL frameworks. The \texttt{dpsa4fl}~\cite{dpsa4fl} core library
 enables the use of the Prio protocol for aggregation of gradient vectors in the
 context of FL. It is currently specialized to work with the \texttt{janus}
 implementation of Prio. We provide python bindings in the package
-\texttt{dpsa4fl-bindings.py}, and an easy-to-use integration with the \texttt{flower}
-framework in the package \texttt{dpsa4flwr}.
-{\color{green}TODO: add github links to components}
+\texttt{dpsa4fl-bindings.py}~\cite{dpsa4fl-bindings}, and an easy-to-use integration with the \texttt{flower}
+framework in the package \texttt{dpsa4flower}~\cite{dpsa4flower}.
 
 \subsection{Architecture}
 A distributed FL system using \texttt{dpsa4fl} consists of
@@ -346,7 +345,7 @@ servers we call it the \textit{controller}.
 \begin{figure}[h]
   \centering
   \includegraphics[width=\columnwidth]{assets/dpsa-overview-2-edit_no_explanations-2023-08-22.drawio-edit_rectangle_raw-joined-text_littleproblem-fixed-textfont-addnoise-fontsize.pdf}
-  \caption{Schematic architecture of an FL system using \texttt{dpsa4flwr}}
+  \caption{Schematic architecture of an FL system using \texttt{dpsa4flower}}
   \label{fig:architecture}
 \end{figure}
 
