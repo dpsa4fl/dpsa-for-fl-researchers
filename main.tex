@@ -76,10 +76,10 @@ participants to compute a function on their confidential data that reveals only
 the computation result without disclosing any other information about the
 inputs to anyone. This can be leveraged to enable adding the noise after aggregating
 intermediate results, but keep the individual contributions and the non-noised
-aggregate secret (\emph{server dp}~\cite{dprio}).
+aggregate secret (\emph{server DP},~\cite{dprio}).
 
 \paragraph{Contributions.}
-We present \texttt{dpsa4fl}, a system which provides server dp with
+We present \texttt{dpsa4fl}, a system which provides server DP with
 secure aggregation for federated learning. Our privacy guarantees cover the training
 result, as well as all intermediate aggregation and computation steps. We employ the
 prio protocol~\cite{prio} for secure aggregation.
@@ -555,7 +555,7 @@ Last, consider that our protocol simply is a modification of the regular gradien
 The communication costs of transmitting the clients' gradients in a
 differentially private way compared to transmitting plaintext data is an
 important metric for evaluating aggregation protocols for FL. Since gradients
-are typically large (e.g. [TODO: insert size here]), their transmission accounts
+are typically large, their transmission accounts
 for most of the time complexity of the whole learning procedure.
 
 In the Prio protocol, the message size is mostly determined by the size of the
