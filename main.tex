@@ -195,16 +195,14 @@ way that reveals only the aggregate result. More concretely, let
 $x_1,\ldots,x_n$ be private values, each located at one of $n$ clients. The goal of SA
 is to compute a given function $f(x_1,\ldots,x_n)$ in a way that every
 participant learns at most as much about the input values $x_1,\ldots,x_n$
-as can be deduced mathematically from only knowing the result of $f$.
-
-{\color{red}TODO: add reference}
+as can be deduced mathematically from only knowing the result of $f$.~\cite{prio}
 
 A topic related to SA is input validation. In some cases, it might be
 required that the data submitted by clients fulfills certain properties, such as
 lying within certain numerical bounds. Since the aggregating servers
 do not see the submissions in plaintext, they cannot easily check whether this
 is the case. Solutions usually involve zero-knowledge proof
-protocols, where aggregation servers or clients interact with each other in
+protocols~\cite{BBCGGI19}, where aggregation servers or clients interact with each other in
 order to convince themselves of the validity of the data---without revealing it.
 
 
@@ -246,9 +244,7 @@ with local DP it scales with the number of clients.
 
 \paragraph{Robustness}
 
-Differential privacy not only protects from inference attacks, but also limits the influence a single gradients' value can have on the training result. This is a viable defense against \textit{data poisoning attacks} by malicious clients attempting to sabotage or sway training results in their favour. Note that providing differential privacy for clients that don't have an interest in having differential privacy is not trivial in a setting where secure aggregation is used. A usual approach to bounding the sensitivity of many functions is bounding the inputs -- something that the noising parties cannot easily do if they don't have access to the plaintext values. Input validation is a relief, but in our case comes with additional trust requirements.
-
-{\color{red}TODO: add reference}
+Differential privacy not only protects from inference attacks, but also limits the influence a single gradients' value can have on the training result. This is a viable defense against \textit{data poisoning attacks} by malicious clients attempting to sabotage or sway training results in their favour~\cite{Poisoning3,Poisoning2,Poisoning1}. Note that providing differential privacy for clients that don't have an interest in having differential privacy is not trivial in a setting where secure aggregation is used. A usual approach to bounding the sensitivity of many functions is bounding the inputs --- something that the noising parties cannot easily do if they don't have access to the plaintext values. Input validation is a relief, but in our case comes with additional trust requirements.
 
 
 
