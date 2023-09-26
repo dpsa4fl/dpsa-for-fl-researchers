@@ -261,7 +261,7 @@ way to securely aggregate client data with two aggregation servers. As long as
 one server remains honest, the data remains private. One outstanding feature of
 prio is that the validity of the submitted data can be verified by the
 aggregators without them having access to the data itself (\textit{input
-  validation}).
+  validation}). This however requires \emph{both} servers to be honest.
 
 The original prio protocol has since been improved, and, under the name of Prio3, integrated into the
 more general framework of \textit{verifiable distributed aggregation
@@ -315,9 +315,9 @@ in collecting and analyzing data is obviously in the business of extracting valu
 information from that data, and thus is incentivized to disrespect individual
 users' privacy. Prio allows the task of data aggregation to be delegated to
 third parties, and thus makes it impossible for the data analyst to extract more
-information from the data than it promises publicly to do. From the client's
+information from the data than they publicly claim to do. From the client's
 perspective, splitting the trust between multiple aggregation servers (and thus
-multiple parties), makes the system especially trustworthy. As long as there is
+multiple parties) makes the system especially trustworthy. As long as there is
 reason to believe that the aggregators do not collude, the data
 remains private.
 
@@ -337,9 +337,10 @@ context of FL. It is currently specialized to work with the \texttt{janus}
 implementation of Prio. We provide python bindings in the package
 \texttt{dpsa4fl-bindings.py}, and an easy-to-use integration with the flower
 framework in the package \texttt{dpsa4flwr}.
+{\color{green}TODO: add github links to components}
 
 \subsection{Architecture}
-A distributed FL system using \texttt{dpsa4fl} thus consists of
+A distributed FL system using \texttt{dpsa4fl} consists of
 two parts~(figure~\ref{fig:architecture}): the original participants as envisioned by the FL
 framework, i.e., a server and multiple clients, and two Prio (janus) aggregation servers
 executing the Prio protocol. To differentiate the FL server from the aggregation
@@ -348,7 +349,7 @@ servers we call it the \textit{controller}.
 \begin{figure}[h]
   \centering
   \includegraphics[width=\columnwidth]{assets/dpsa-overview-2-edit_no_explanations-2023-08-22.drawio-edit_rectangle_raw-joined-text_littleproblem-fixed-textfont.pdf}
-  \caption{Test}
+  \caption{Schematic architecture of an FL system using \texttt{dpsa4flwr}}
   \label{fig:architecture}
 \end{figure}
 
@@ -361,7 +362,7 @@ The aggregation servers execute the Prio protocol, thereby computing the sum of
 the clients' gradients, without the need to disclose individual gradients to
 anyone. They also verify that all individually submitted vectors have L2-norm
 less than one. Finally, before revealing the aggregated gradient to the
-collector, each aggregation server adds noise to their own aggregate share, in
+controller, each aggregation server adds noise to their own aggregate share, in
 order to ensure differential privacy.
 
 The \texttt{dpsa4fl} stack provides the glue code for making this all
@@ -369,7 +370,7 @@ work.
 
 \subsection{Integration with an FL framework}
 We begin by describing how \texttt{dpsa4fl} is intended to be used by FL
-frameworks, using flower as target framework.
+frameworks, using \texttt{flower} as the example target framework.
 
 Before starting the training process, the controller notifies both aggregators
 that it's starting a training session with a given id. The aggregators store
@@ -381,23 +382,23 @@ In each round of training, the following sequence of actions happens:
   starting a training round, and receives a task id under which it can collect
   the aggregation result.
 \item \texttt{Flower}: The controller selects available clients for this round
-  and broadcasts its model, as well as the task id to them.
+  and broadcasts its model as well as the task id to them.
 \item \texttt{Flower}: The clients train their copy of the model on their local training data and
   compute the overall gradient vector.
 \item \texttt{Flower}: They use flower's aggregation method to notify the
   controller that they have succeeded with training, but don't transmit the gradient.
 \item \texttt{dpsa4fl}: They split and encode the gradient vector according to the prio protocol
-  and submit each part under the given task id to an aggregation server.
+  and submit each part to an aggregation server under the given task id.
 \item \texttt{Prio}: The aggregation servers aggregate reports from all clients, verify them,
-  add noise for differential privacy and compute the sum of all gradient vectors.
-\item \texttt{dpsa4fl}: The controller collects the gradient vector via its task id.
+  add noise for differential privacy and compute the sum of all gradient vector shares.
+\item \texttt{dpsa4fl}: The controller collects the aggregate gradient vector via its task id.
 \item \texttt{Flower}: It applies the gradient to the global model, and begins the next round.
 \end{enumerate}
 
 
 \section{Threat model and guarantees}
-The controller and the clients have different goals, and thus the threat model
-has to be considered separately for them. The parties running the aggregation
+The controller and the clients have different goals, so their threat models
+have to be considered separately. The parties running the aggregation
 servers should be impartial to the learning process, but of course might deviate
 from that behaviour. We consider the perspectives of the clients
 and of the controller below.
@@ -406,9 +407,9 @@ and of the controller below.
 without their private information becoming known by other parties. There are two
 ways this might happen:
 \begin{enumerate}
-\item The submitted gradient vector of a client (for a given training round) might
+\item The submitted gradient vector of a client (for any training round) might
   become known to other parties. This would allow them to infer properties of
-  the local training set.
+  the clients' local training set.
 \item Access to the trained model makes it possible to make inferences about the
   combined training set. Combination with other publicly available data can lead to
   leakage of individual clients' data.
@@ -420,8 +421,8 @@ private.
 Attack (1) is mitigated by the secure aggregation mechanism of Prio.
 Each aggregation server receives only a share
 the clients' gradient vectors. It is impossible to reconstruct the original
-vector from this share alone. All processing on the aggregation server, i.e.,
-the verification, aggregation and noising happens in terms of its shares.
+vector from this share alone. All processing on the aggregation server, i.e.
+the verification, aggregation and noising, happens entirely on its shares.
 This means that, as long as the aggregation servers don't collude, they don't
 have access to individual gradients.
 
@@ -443,9 +444,8 @@ gradient vectors.
 
 The input validation capability of Prio mitigates this sort of attack.
 As part of the aggregation process, the aggregators verify that each submitted gradient vector
-has an L2-norm less than $1$. This means that while clients still can submit
-``false'' data, they cannot gain disproportionate leverage by doing so. Thus, data
-poisoning attacks by a minority of clients are mitigated. Prio can only
+has an L2-norm less than $1$. This means that while clients can still submit
+``false'' data, they cannot gain disproportionate leverage by doing so. Prio can only
 guarantee this as long as the aggregation servers do not collude with malicious
 clients, as in that case it would be easy to craft submissions to fool the other
 aggregation server into believing that reports are well-formed, even though they
@@ -453,7 +453,7 @@ are not.
 
 In practice this means: the controller can be sure that it receives gradients
 based on real data, as long as it trusts \textit{both} aggregation servers to
-execute the protocol honestly, and a majority of clients is honest.
+execute the protocol honestly, and clients do not collude to collectively poison the model.
 
 
 
@@ -512,7 +512,7 @@ The protocol describes a distributed implementation of the usual differentially 
   \end{algorithmic}
 \end{algorithm}
 
-We claim that executing Algorithms 1 and 2 with non-colluding aggregation servers, one of which honestly but curiously follows protocol, and an arbitrary number of potentially malicious clients, provides $(N \cdot \rho)$-zero-concentrated differential privacy for any clients' dataset. If both servers are honest, the protocol also protects against data poisoning attacks by malicious clients.
+We claim that executing Algorithms 1 and 2 with non-colluding aggregation servers, one of which honestly but curiously follows protocol, and an arbitrary number of potentially malicious clients, provides $(N \cdot \rho)$-zero-concentrated differential privacy for any honest clients' dataset. If both servers are honest, the protocol also protects against data poisoning attacks by malicious clients.
 
 \paragraph{Privacy}
 We perform the privacy analysis from the point of view of one client executing one iteration of the loop starting at line~\ref{lst:line:loop} of Algorithm~\ref{alg:client} faithfully. We show that:
@@ -541,7 +541,7 @@ One iteration of the computation inside the loop (lines~\ref{lst:line:retrieve} 
 \end{enumerate}
 
 \paragraph{Robustness}
-In line~\ref{lst:line:verify} of Algorithm~\ref{alg:server}, the servers perform a secret-shared non-interactive proof protocol \cite[Section 4]{prio} together to verify that the client-side clipping was performed properly. This ensures the sensitivity is as described above, even for gradients submitted by malicious clients, and hence protects from clients attempting data poisoning, i.e. influencing the computation result in a way that benefits them. The verification part of the protocol requires all servers to act honestly, so our system offers this protection only under a weaker threat model. The above proof of privacy still holds for all clients that execute the protocol truthfully.
+In line~\ref{lst:line:verify} of Algorithm~\ref{alg:server}, the servers perform a secret-shared non-interactive proof protocol \cite[Section 4]{prio} together to verify that the client-side clipping was performed properly. This ensures the sensitivity is as described above, even for gradients submitted by malicious clients, and hence protects from clients attempting to influence the computation result disproportionately. The verification part of the protocol requires all servers to act honestly, so our system offers this protection only under a weaker threat model. The above proof of privacy still holds for all clients that execute the protocol truthfully.
 
 \section{Evaluation}
 
@@ -561,22 +561,21 @@ Last, consider that our protocol simply is a modification of the regular gradien
 
 \subsection{Communication complexity}
 The communication costs of transmitting the clients' gradients in a
-differentially private way, compared to transmitting plaintext data is an
+differentially private way compared to transmitting plaintext data is an
 important metric for evaluating aggregation protocols for FL. Since gradients
 are typically large (e.g. [TODO: insert size here]), their transmission accounts
 for most of the time complexity of the whole learning procedure.
 
 In the prio protocol, the message size is mostly determined by the size of the
 encoded gradient together with the size of the encoded proof of its
-well-formedness. Such a message has to be sent two times: one to the leader and
-one to the helper. Other messages sent as part of the prio protocol are negligible.
+well-formedness. Two such messages must be sent per aggregation, one to each
+aggregator. Other messages sent as part of the prio protocol are negligible.
 
 In our current implementation of \texttt{dpsa4fl} we use a naive encoding of
 gradient entries as field elements. This results in a rather large blow-up of
-message size. Improvements to our encoding are incoming, and as such we don't
-desribe our encoding in detail. It should suffice to say that currently, a
-single 16-bit fixed point number is encoded by 16 128-bit field elements, which
-means that our messages are at least 128 times the size of plaintext gradients.
+message size. Currently, a single 16-bit fixed point number is encoded by 16
+128-bit field elements, which means that our messages are at least 128 times
+the size of plaintext gradients.
 There are both trivial and more complex methods to improve on this: the field
 size of 128-bit can be reduced to 64-bit while still supporting gradients with
 up to $2^{34} \approx 17 \cdot 10^9$ entries. Furthermore, the encoding can be
@@ -585,6 +584,7 @@ transmitted bit. Since this will increase the size of the correctness proof,
 a balance which optimizes message size has to be found.
 
 
+{\color{green}TODO: maybe give some context to the image?}
 \begin{tikzpicture}
   \begin{axis}[
     title={Message complexity per client},
@@ -626,11 +626,11 @@ a balance which optimizes message size has to be found.
 \end{tikzpicture}
 
 \section{Conclusion}
-While in particular the previous section concerning message complexity
-illustrates that \texttt{dpsa4fl} is not yet ready for real deployments, the
+While the previous section concerning message complexity
+illustrates that \texttt{dpsa4fl} is not yet ready for real-world deployment, the
 existing work is quite promising. The \texttt{libprio-rs} and \texttt{janus}
 libraries were comparably easy to extend, and the threat model provided by Prio
-seems to be strong and yet pragmatic enough, for it to gain widespread adoption.
+seems to be strong and yet pragmatic enough for it to gain widespread adoption.
 Ideas for approaches to minimize message sizes exist, and are left for future work.
 
 \bibliographystyle{plainnat}
