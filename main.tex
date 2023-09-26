@@ -422,7 +422,7 @@ Attack (2) is mitigated by the fact that the sum of
 gradient vectors is never revealed by itself, but only together with the noise added by
 both aggregation servers. As long as at least one aggregation server adds
 correctly configured noise, this makes the revealed value differentially
-private. Differential privacy mitigates inference attacks {\color{red}TODO: source}.
+private. Differential privacy mitigates inference attacks~\cite{MIA-DP1,MIA-DP2,MIA-DP3}.
 
 In practice this means: clients can be sure that their data is safe as long as
 they trust one of the aggregation servers to be honest in their execution of the
@@ -441,7 +441,7 @@ has an L2-norm less than $1$. This means that while clients can still submit
 guarantee this as long as the aggregation servers do not collude with malicious
 clients, as in that case it would be easy to craft submissions to fool the other
 aggregation server into believing that reports are well-formed, even though they
-are not.
+are not~\cite{prio}.
 
 In practice this means: the controller can be sure that it receives gradients
 based on real data, as long as it trusts \textit{both} aggregation servers to
