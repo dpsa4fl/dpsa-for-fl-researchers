@@ -319,8 +319,8 @@ multiple parties) makes the system especially trustworthy. As long as there is
 reason to believe that the aggregators do not collude, the data
 remains private.
 
-The architecture of janus allows for a multitude of aggregation tasks
-to be handled by a single janus instance. It thus naturally lends itself to be
+The architecture of \texttt{janus} allows for a multitude of aggregation tasks
+to be handled by a single server instance. It thus naturally lends itself to be
 offered as ``Aggregation-as-a-Service''. This means that for a use case such as
 ours, the FL stakeholder does not have to deal with setting up Prio
 infrastructure. Instead, the whole point of Prio is that the aggregation servers
@@ -340,13 +340,13 @@ framework in the package \texttt{dpsa4flwr}.
 \subsection{Architecture}
 A distributed FL system using \texttt{dpsa4fl} consists of
 two parts~(figure~\ref{fig:architecture}): the original participants as envisioned by the FL
-framework, i.e., a server and multiple clients, and two Prio (janus) aggregation servers
+framework, i.e., a server and multiple clients, and two Prio aggregation servers
 executing the Prio protocol. To differentiate the FL server from the aggregation
 servers we call it the \textit{controller}.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=\columnwidth]{assets/dpsa-overview-2-edit_no_explanations-2023-08-22.drawio-edit_rectangle_raw-joined-text_littleproblem-fixed-textfont-addnoise.pdf}
+  \includegraphics[width=\columnwidth]{assets/dpsa-overview-2-edit_no_explanations-2023-08-22.drawio-edit_rectangle_raw-joined-text_littleproblem-fixed-textfont-addnoise-fontsize.pdf}
   \caption{Schematic architecture of an FL system using \texttt{dpsa4flwr}}
   \label{fig:architecture}
 \end{figure}
