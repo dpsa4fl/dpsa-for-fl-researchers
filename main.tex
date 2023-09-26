@@ -159,18 +159,17 @@ Finally, with all mentioned work being mostly theoretical papers, the
 options for actually running real-world FL tasks seem to be few:
 \begin{itemize}
   \setlength\itemsep{0em}
-\item There are building blocks for both secure aggregation\footnote{\url{https://flower.dev/docs/framework/contributor-ref-secure-aggregation-protocols.html}}
-  (based on SecAgg) and for local or global differential privacy\footnote{\url{https://flower.dev/docs/framework/explanation-differential-privacy.html}} in \texttt{flower}. But
+\item There are building blocks for both secure aggregation~\cite{flower-docs-sa}
+  (based on SecAgg) and for local or global differential privacy~\cite{flower-docs-dp} in \texttt{flower}. But
   simply putting them together is not sufficient if the \texttt{flower} server is not trusted: In case of global DP, the
-  server has access to the non-noised aggregate. In case of local DP, the
-  utility loss is too high to provide an adequate amount of privacy.
+  server has access to the non-noised aggregate. In case of local DP, 
+  an adequate amount of privacy implies a very high utility loss.
 \item The authors of DPrio provide source code\footnote{\url{https://github.com/DPrio-PoPETs/dprio}} for their empirical evaluation in
   terms of a simulation of FL, but there currently is no integration into an actual FL framework.
 \item In a similar vein, the authors of e.g.~\cite{Kairouz2021TheDD} provide
-  source code which is based on TensorFlow Federated~\cite{tff}. Unfortunately this
+  source code\footnote{\url{https://github.com/google-research/federated/tree/master/distributed_dp}} which is based on TensorFlow Federated~\cite{tff}. Unfortunately this
   framework is currently only usable for simulations as well.
 \end{itemize}
-
 
 \section{Preliminaries}
 
