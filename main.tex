@@ -678,14 +678,16 @@ tradeoff is not available.
 % \end{figure}
 
 \section{Conclusion}
-While the previous section concerning message complexity
-illustrates that \texttt{dpsa4fl} is not yet ready for real-world deployment, the
-present state is promising. The \texttt{libprio-rs} and \texttt{janus}
+The previous section concerning message complexity illustrates that while
+\texttt{dpsa4fl} is almost on par with existing methods, message sizes are more
+than one order of magnitude higher compared with plaintext gradients.
+This shows that \texttt{dpsa4fl} is not yet ready for real-world deployment, but
+the present state is nevertheless promising. The \texttt{libprio-rs} and \texttt{janus}
 libraries were comparably easy to extend, and the threat model provided by Prio
 seems to be strong and yet pragmatic enough for it to gain widespread adoption.
 Integration with the \texttt{flower} framework opens possibilities for convenient
-use in existing applications.
-Ideas for approaches to minimize message sizes exist, and are left for future work.
+use in existing applications. Ideas for approaches to minimize message sizes
+exist, and are left for future work.
 
 \bibliographystyle{plainnat}
 \bibliography{doc}
