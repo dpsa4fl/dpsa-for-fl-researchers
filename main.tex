@@ -621,7 +621,7 @@ submissions from the aggregate. While RoFL provides both $L_2$  and $L_\infty$
 bounds, ACORN-robust only supports $L_\infty$. Additionally, ACORN-robust has a
 parameter $\gamma$ which describes the fraction of invalid submissions against
 which it is robust. Lower values for $\gamma$ achieve smaller message sizes, but
-provide lesser robustness.
+provide less robustness.
 
 \begin{figure}
 \begin{tblr}{c c c c c c c c}
@@ -643,18 +643,18 @@ provide lesser robustness.
 
 \end{tblr}
 \caption{Empirical comparison of communication costs with RoFL and ACORN-robust. Values
-  are for transmission of $\ell$-length, 32bit fixed-point gradient vectors.
-  With $n$ clients, and robustness against a fraction of $\gamma$ malicious
+  are for transmission of $\ell$-length, 32bit fixed-point gradient vectors, $n$ clients,
+  and robustness against a fraction of $\gamma$ malicious
   clients. The servers are assumed to be honest but curious.}
 \label{fig:message-comparison}
 \end{figure}
 
 As figure \ref{fig:message-comparison} shows, our unoptimized encoding is quite
-near the $L_2$ variant of RoFL. Additionally, \texttt{dpsa4fl} does not require
-any client-client communications, and thus our message complexity only depends
-on the size of the gradient vector making it preferable for applications with a
-high number of clients. Also, neither RoFL nor ACORN have explicit
-provisions for DP which means that while both global or local DP could be used
+close to the $L_2$ variant of RoFL. Additionally, \texttt{dpsa4fl} does not require
+any client-client communications. Thus our message complexity only depends
+on the size of the gradient vector, making it preferable for applications with a
+large number of clients. Also, neither RoFL nor ACORN have explicit
+provisions for DP, which means that while both global or local DP could be used
 with their aggregation methods, server DP with its much better privacy-utility
 tradeoff is not available.
 
@@ -714,7 +714,7 @@ The previous section concerning message complexity illustrates that while
 \texttt{dpsa4fl} is almost on par with existing methods, message sizes are more
 than one order of magnitude higher compared with plaintext gradients.
 This shows that \texttt{dpsa4fl} is not yet ready for real-world deployment, but
-the present state is nevertheless promising. The \texttt{libprio-rs} and \texttt{janus}
+the present state is promising nevertheless. The \texttt{libprio-rs} and \texttt{janus}
 libraries were comparably easy to extend, and the threat model provided by Prio
 seems to be strong and yet pragmatic enough for it to gain widespread adoption.
 Integration with the \texttt{flower} framework opens possibilities for convenient
