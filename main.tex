@@ -460,7 +460,14 @@ execute the protocol honestly, and clients do not collude to collectively poison
 
 \section{Privacy analysis}
 
-The protocol describes a distributed implementation of the usual differentially private gradient descent \cite{Abadi_2016}, with the differences being the integer encoding of the gradient vector to enable secret sharing according to the Prio protocol \cite{prio}, the aggregation happening on a different machine than the training itself, and the use of discrete Gaussian noise on the integer encoding of the gradient aggregate.
+Integrating Prio via \texttt{dpsa4fl} into an FL framework as described above
+results in a distributed implementation of the usual differentially
+private gradient descent~\cite{Abadi_2016}, with the differences being the
+integer encoding of the gradient vector to enable secret sharing according to
+the Prio protocol~\cite{prio}, the aggregation happening on a different machine
+than the training itself, and the use of discrete Gaussian noise on the integer
+encoding of the gradient aggregate.
+
 \begin{algorithm}[h]
   \caption{Client procedure}\label{alg:client}
 
@@ -511,13 +518,17 @@ The protocol describes a distributed implementation of the usual differentially 
   \end{algorithmic}
 \end{algorithm}
 
-We claim that executing Algorithms 1 and 2 with non-colluding aggregation servers, one of which honestly but curiously follows protocol, and an arbitrary number of potentially malicious clients, provides $(N \cdot \rho)$-zero-concentrated differential privacy for any honest clients' dataset. If both servers are honest, the protocol also protects against data poisoning attacks by malicious clients.
+
+The behaviour of client and server are represented by Algorithm \ref{alg:client} and \ref{alg:server}.
+We claim that executing these with non-colluding aggregation
+servers, one of which is honest but curious, and an arbitrary number of potentially malicious clients, provides $(N \cdot \rho)$-zero-concentrated differential privacy for any honest clients' dataset. If both servers are honest, the protocol also protects against data poisoning attacks by malicious clients.
+{\color{red}TODO: above, say what N and rho are?}
 
 \paragraph{Privacy}
 We perform the privacy analysis from the point of view of one client executing one iteration of the loop starting at line~\ref{lst:line:loop} of Algorithm~\ref{alg:client} faithfully. We show that:
 \begin{enumerate}
 \item The function mapping the clients' dataset to the gradient whose shares are transferred to the aggregation servers is $2^b$-sensitive.
-\item No information about the gradient except its secret shares is revealed to any party Prior to noising.
+\item No information about the gradient except its secret shares is revealed to any party prior to noising.
 \item The noise added on the aggregation server provides $\rho$-zero-concentrated differential privacy for the aggregation result.
 \end{enumerate}
 It follows that the execution of Algorithm~\ref{alg:client} provides $(N\cdot\rho)$-zero-concentrated differential privacy by the composition property \cite[Lemma~1.8 on page 7]{DBLP:journals/corr/BunS16}.
@@ -536,7 +547,7 @@ One iteration of the computation inside the loop (lines~\ref{lst:line:retrieve} 
 
 \item Prio secret sharing amounts to the client splitting their secret into summands, and recovering the aggregated shares amounts to summing the sums of secret shares \cite[Scheme on page 3]{prio}. Doing so does not affect the sensitivity of $\textbf{g}_{int}$, as the result of the computation is equal to the result obtained by summing all clients' gradients without secret sharing. Share transfer happens over an encrypted channel \cite[Step 1 of Scheme on page 3]{prio}, combining the shares happens after adding noise on the server in line~\ref{lst:line:noise}. Therefore if at least one of the servers is honest and they don't collude, the only things visible to anyone eavesdropping or participating are single secret shares of the gradient and the noised aggregate.
 
-\item Noise is added Prior to combining the aggregate shares to avoid disclosing the non-noised aggregate to a server. Since combining them simply means computing their sum \cite[Step 3 of Scheme on page 3]{prio}, the value of $\textbf{G}_{agg}$ does not depend on whether the noise is added before or after combining the shares. We can hence view the function mapping one clients' data set $X$ to the non-noised gradient aggregate as a $2^b$-sensitive function over the integers, so adding noise drawn from $\mathcal N_\mathbb{Z}\left(0,\frac{2^{2b}}{2\rho}\right)$ will provide $\rho$-zero-concentrated differential privacy due to~\cite[Theorem 14 on page 15, with all $\sigma_j=\frac{2^{2b}}{2\rho}$]{DBLP:journals/corr/abs-2004-00010}. Mapping the integer encoding of the aggregate back to a float vector and using it in further training will not affect privacy due to post-processing invariance. Note that each server adds the entire amount of noise required to obtain the guarantee, so if at least one of them is honest the guarantee holds. This comes at the cost of adding the entire noise on each server, resulting in worse utility.
+\item Noise is added prior to combining the aggregate shares to avoid disclosing the non-noised aggregate to a server. Since combining them simply means computing their sum \cite[Step 3 of Scheme on page 3]{prio}, the value of $\textbf{G}_{agg}$ does not depend on whether the noise is added before or after combining the shares. We can hence view the function mapping one clients' data set $X$ to the non-noised gradient aggregate as a $2^b$-sensitive function over the integers, so adding noise drawn from $\mathcal N_\mathbb{Z}\left(0,\frac{2^{2b}}{2\rho}\right)$ will provide $\rho$-zero-concentrated differential privacy due to~\cite[Theorem 14 on page 15, with all $\sigma_j=\frac{2^{2b}}{2\rho}$]{DBLP:journals/corr/abs-2004-00010}. Mapping the integer encoding of the aggregate back to a float vector and using it in further training will not affect privacy due to post-processing invariance. Note that each server adds the entire amount of noise required to obtain the guarantee, so if at least one of them is honest the guarantee holds. This comes at the cost of adding the entire noise on each server, resulting in worse utility.
 \end{enumerate}
 
 \paragraph{Robustness}
