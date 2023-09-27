@@ -218,6 +218,7 @@ Differential privacy is a method of enabling the publication of information deri
 
 We define the variant we will be using throughout the paper, following~\cite{DBLP:journals/corr/BunS16}.
 \begin{definition}[Zero-concentrated Differential Privacy]
+  \label{def:zcdp}
 A randomized function $M: \mathcal X\rightarrow Y$ is $\rho$-zero-concentrated differentially private if for all $X,X'\in \mathcal X$ differing in a single entry and all $\alpha\in(1,\infty)$,
 $$D_\alpha(M(X)\|M(X'))\leq \rho\cdot\alpha$$
 where $D_\alpha(M(X)\|M(X'))$ is the $\alpha$-Renyi divergence between the distributions of $M(X)$ and $M(X')$.
@@ -394,6 +395,23 @@ In each round of training, the following sequence of actions happens:
 \item \texttt{Flower}: It applies the gradient to the global model, and begins the next round.
 \end{enumerate}
 
+\subsection{Configuration}
+There are two parameters for \texttt{dpsa4fl} which users must be aware of: the
+bit-length $b$ of the fixed-point encoding of the gradient weights and the privacy
+parameter $\rho$ of zCDP (Definition \ref{def:zcdp}).
+
+For transmission with the
+Prio protocol, the gradient entries are encoded as $b$-bit fixed-point numbers.
+We only support $b \in \{16, 32, 64\}$, this should be enough for all
+use cases. Choosing a higher bit-length means that there is less utility-loss
+due to rounding, but also increases message sizes. For most applications it is
+advisable to use the same bit-length as the respective floating-point
+representation of their training algorithm.
+
+Choosing the privacy parameter $\rho$ depends on the particular use case and on
+the amount of privacy which the clients expect to be provided. For $N$ training
+rounds, our system guarantees $(N \cdot \rho)$-zero-concentrated
+differential privacy.
 
 \section{Threat model and guarantees}
 The controller and the clients have different goals, so their threat models
@@ -521,8 +539,11 @@ encoding of the gradient aggregate.
 
 The behaviour of client and server are represented by Algorithm \ref{alg:client} and \ref{alg:server}.
 We claim that executing these with non-colluding aggregation
-servers, one of which is honest but curious, and an arbitrary number of potentially malicious clients, provides $(N \cdot \rho)$-zero-concentrated differential privacy for any honest clients' dataset. If both servers are honest, the protocol also protects against data poisoning attacks by malicious clients.
-{\color{red}TODO: above, say what N and rho are?}
+servers, one of which is honest but curious, and an arbitrary number of
+potentially malicious clients, provides $(N \cdot \rho)$-zero-concentrated
+differential privacy for any honest clients' dataset. If both servers are
+honest, the protocol also protects against data poisoning attacks by malicious
+clients.
 
 \paragraph{Privacy}
 We perform the privacy analysis from the point of view of one client executing one iteration of the loop starting at line~\ref{lst:line:loop} of Algorithm~\ref{alg:client} faithfully. We show that:
